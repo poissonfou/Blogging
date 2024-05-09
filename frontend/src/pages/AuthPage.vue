@@ -18,7 +18,7 @@
         </the-form>
       </div>
     </div>
-    <div v-else class="auth-body signup">
+    <div v-else-if="route == 'signup'" class="auth-body signup">
       <h1>Signup</h1>
       <div class="input-container">
         <img src="/images/signup_auth.png" alt="signup illustration" />
@@ -41,6 +41,29 @@
             <input type="password" name="confirm" />
           </div>
           <button>Signup</button>
+        </the-form>
+      </div>
+    </div>
+    <div v-else class="auth-body">
+      <h1>Update</h1>
+      <div class="input-container update">
+        <img src="/images/update.png" alt="update illustration" />
+        <!-- <a href="https://storyset.com/work">Work illustrations by Storyset</a> -->
+        <the-form @submit="update">
+          <div class="input-box">
+            <label for="name">Name</label>
+            <input type="text" name="name" />
+          </div>
+          <div class="input-box">
+            <label for="password">Password</label>
+            <input type="password" name="password" />
+          </div>
+          <div class="input-box">
+            <label for="confirm">Confirm your password</label>
+            <input type="password" name="confirm" />
+          </div>
+          <span>Leave empty those you don't wish to change.</span>
+          <button>Update</button>
         </the-form>
       </div>
     </div>
@@ -86,6 +109,11 @@ export default {
         throw new Error(responseData.errors[0].message);
       }
 
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...responseData.data.login })
+      );
+
       this.$router.push({ path: "/dashboard" });
     },
     async signup(event) {
@@ -121,6 +149,65 @@ export default {
         throw new Error(responseData.errors[0].message);
       }
 
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...responseData.data.signup })
+      );
+
+      this.$router.push({ path: "/dashboard" });
+    },
+    async update(event) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const password = form.get("password").trim();
+      const confirm = form.get("confirm").trim();
+      const name = form.get("name").trim();
+      const id = JSON.parse(localStorage.getItem("user")).id;
+
+      if (!name.length && !password.length) return;
+
+      if (password.length) {
+        if (password !== confirm) {
+          console.log("Passwords don't match");
+          return;
+        }
+
+        if (password.length < 6) {
+          console.log("Passwords needs to be at least six digits.");
+          return;
+        }
+      }
+
+      if (!id) {
+        console.log("Invalid id. Please login again.");
+        return;
+      }
+
+      const QUERY = {
+        query: `
+           mutation {
+           update(name: "${name}", password: "${password}", confirm: "${confirm}", id:${id}){
+              message
+            }
+          }
+        `,
+      };
+
+      const response = await fetch("http://localhost:3000/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(QUERY),
+      });
+
+      const responseData = await response.json();
+
+      if (responseData.errors) {
+        console.log(responseData.errors);
+        return;
+      }
+
       this.$router.push({ path: "/dashboard" });
     },
   },
@@ -128,9 +215,6 @@ export default {
     route() {
       return this.$route.query.mode;
     },
-  },
-  mounted() {
-    console.log(this.route);
   },
 };
 </script>
@@ -172,5 +256,9 @@ export default {
 
 .signup {
   padding-bottom: 2em;
+}
+
+.update span {
+  font-size: 0.8em;
 }
 </style>

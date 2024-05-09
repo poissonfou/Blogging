@@ -12,6 +12,7 @@ const Post = sequelize.define("post", {
   abstract: Sequelize.STRING,
   body: Sequelize.STRING,
   images: Sequelize.JSON,
+  tags: Sequelize.JSON,
 });
 
 module.exports = Post;

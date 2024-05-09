@@ -308,6 +308,11 @@ export default {
         throw new Error(responseData.errors[0].message);
       }
 
+      localStorage.setItem(
+        "user",
+        JSON.stringify({ ...responseData.data.signup })
+      );
+
       this.$router.push({ path: "/dashboard" });
     },
   },
