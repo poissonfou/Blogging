@@ -28,7 +28,8 @@
               class="post-miniature"
               @click="showPost(post.id)"
             >
-              <p>{{ post.title }}</p>
+              <h2>{{ post.title }}</h2>
+              <p>{{ post.abstract }}</p>
               <div>
                 <span
                   v-for="[index, tag] in post.tags.entries()"
@@ -45,7 +46,8 @@
               :key="index"
               class="post-miniature"
             >
-              <p>{{ post.title }}</p>
+              <h2>{{ post.title }}</h2>
+              <p>{{ post.abstract }}</p>
               <div>
                 <span
                   v-for="[index, tag] in post.tags.entries()"
@@ -57,9 +59,14 @@
             </div>
           </div>
           <div v-if="tab == 'display-post'" class="display-post">
-            <h1>{{ selectedPost.title }}</h1>
-            <h3>{{ selectedPost.abstract }}</h3>
-            <p>{{ selectedPost.body }}</p>
+            <post-display
+              :title="selectedPost.title"
+              :abstract="selectedPost.abstract"
+              :body="selectedPost.body"
+              :createdTime="selectedPost.createdAt"
+              :updatedTime="selectedPost.updatedAt"
+              :notUpdated="selectedPost.notUpdated"
+            ></post-display>
           </div>
           <div v-if="tab == 'add-post'">
             <the-user-post :submitFunction="addPost"></the-user-post>
@@ -106,6 +113,7 @@
 <script>
 import TheUserPost from "../components/TheUserPost.vue";
 import UserInfo from "../components/UserInfo.vue";
+import PostDisplay from "../components/PostDisplay.vue";
 
 export default {
   data() {
@@ -120,6 +128,7 @@ export default {
   components: {
     TheUserPost,
     UserInfo,
+    PostDisplay,
   },
   methods: {
     async fetchUser() {
@@ -138,6 +147,8 @@ export default {
                 body
                 images
                 id
+                createdAt
+                updatedAt
               }
              }
           }
@@ -164,8 +175,8 @@ export default {
       const tags = [];
 
       for (let i = 0; i < posts.length; i++) {
-        let tagsPost = JSON.parse(posts[i].tags);
-        posts[i].tags = tagsPost;
+        let tagsPost = posts[i].tags;
+
         for (let j = 0; j < tagsPost.length; j++) {
           if (!tags.includes(tagsPost[j])) tags.push(tagsPost[j]);
         }
@@ -219,6 +230,8 @@ export default {
                  tags
                  images
                  id
+                 createdAt
+                 updatedAt
                 }
               }
             }
@@ -294,6 +307,8 @@ export default {
               images
               tags
               id
+              createdAt
+              updatedAt
             }
           }
         }
@@ -374,7 +389,32 @@ export default {
     showPost(id) {
       this.tab = "display-post";
       const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
-      this.selectedPost = this.user.posts[postIdx];
+      const post = JSON.parse(JSON.stringify(this.user.posts[postIdx]));
+      post.notUpdated = +post.createdAt == +post.updatedAt;
+
+      const dateCreation = new Date(+post.createdAt);
+      const dateUpdate = new Date(+post.updatedAt);
+      post.createdAt =
+        dateCreation.getUTCDay() +
+        "/" +
+        dateCreation.getUTCMonth() +
+        "/" +
+        dateCreation.getUTCFullYear();
+      +" " + dateCreation.getHours();
+      +"h" + dateCreation.getMinutes();
+      +"m" + dateCreation.getSeconds();
+
+      post.updatedAt =
+        dateUpdate.getUTCDay() +
+        "/" +
+        dateUpdate.getUTCMonth() +
+        "/" +
+        dateUpdate.getUTCFullYear() +
+        " " +
+        dateUpdate.getHours();
+      +"h" + dateUpdate.getMinutes();
+      +"m" + dateUpdate.getSeconds();
+      this.selectedPost = post;
     },
   },
   created() {
@@ -409,35 +449,6 @@ export default {
   border-bottom: none;
 }
 
-.posts {
-  padding: 0em 0.3em;
-  padding-top: 0.5em;
-  text-align: start;
-}
-
-.display-post {
-  padding: 0em 2em;
-}
-
-.display-post h1 {
-  font-size: 3rem;
-  margin: 0em;
-  font-family: "Pridi", serif;
-}
-
-.display-post h3 {
-  font-family: "Zilla Slab", serif;
-  color: rgb(138, 136, 136);
-  font-size: 1.8rem;
-  margin: 0em;
-}
-
-.display-post p {
-  font-family: "Zilla Slab", serif;
-  font-size: 1.5rem;
-  margin: 0.5em 0em;
-}
-
 .add-post {
   margin-left: 1em;
   font-family: "Pridi", serif;
@@ -452,12 +463,19 @@ export default {
   color: rgb(53, 219, 109);
 }
 
+.posts {
+  padding: 0em 1em;
+  padding-top: 0.5em;
+  text-align: start;
+  height: 92%;
+  overflow-y: scroll;
+}
+
 .post-miniature {
-  border: solid 2px rgb(137, 255, 173);
+  border: solid 3px rgb(51, 51, 51);
   border-radius: 5px;
   padding: 0.5em;
-  display: inline-table;
-  width: 10em;
+  margin-bottom: 0.5em;
   font-family: "Zilla Slab", serif;
 }
 
@@ -465,20 +483,26 @@ export default {
   cursor: pointer;
 }
 
-.post-miniature p {
+.post-miniature h2 {
   margin: 0;
   font-family: "Pridi", serif;
   font-size: 2rem;
-  height: 3em;
+}
+
+.post-miniature p {
+  margin: 0;
+  font-family: "Zilla Slab", serif;
+  color: gray;
+  font-size: 1.5rem;
+  margin-bottom: 0.4em;
 }
 
 .tag {
   margin-right: 0.3em;
-  margin-top: 0.3em;
-  background: rgb(53, 219, 178);
+  background: #4059ad;
   padding: 0.5em;
-  border-radius: 10px;
-  font-size: 0.7em;
+  border-radius: 8px;
+  font-size: 0.8rem;
 }
 
 .user-post-actions {
@@ -543,9 +567,9 @@ export default {
   display: inline-block;
   margin-right: 0.3em;
   margin-top: 0.3em;
-  background: rgb(53, 219, 142);
+  background: #4059ad;
   padding: 0.5em;
-  border-radius: 10px;
+  border-radius: 8px;
   font-family: "Zilla Slab", serif;
 }
 

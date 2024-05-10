@@ -1,4 +1,5 @@
 const Sequelize = require("sequelize");
+const { moment } = Sequelize;
 const sequelize = require("../database");
 
 const Post = sequelize.define("post", {

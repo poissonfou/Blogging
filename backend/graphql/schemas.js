@@ -24,6 +24,8 @@ module.exports = buildSchema(`
         body: String!
         images: [String]!
         tags: [String]!
+        createdAt: String
+        updatedAt: String
     }
 
     input addPostInput{

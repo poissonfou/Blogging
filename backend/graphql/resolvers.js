@@ -183,12 +183,12 @@ module.exports = {
     const posts = await user[0].getPosts();
 
     for (let i = 0; i < posts.length; i++) {
-      let x = posts[i].dataValues;
+      let p = posts[i].dataValues;
 
-      posts[i].dataValues.tags = new Array(x.tags);
-      posts[i].dataValues.images = new Array(x.images);
+      posts[i].dataValues.tags = JSON.parse(p.tags);
+      posts[i].dataValues.images = JSON.parse(p.images);
     }
-    console.log("here");
+
     return { name: userData.name, picture: userData.picture, posts: posts };
   },
   addPost: async ({ postInput }) => {
@@ -242,6 +242,8 @@ module.exports = {
         tags,
         images,
         id: post.dataValues.id,
+        createdAt: post.dataValues.createdAt,
+        updatedAt: post.dataValues.updatedAt,
       },
     };
   },
