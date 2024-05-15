@@ -9,14 +9,19 @@
               tab !== 'edit-post' &&
               tab !== 'display-post'
             "
-            @click="changeTab('add-post')"
-            class="add-post"
+            class="header-content"
           >
-            <span>
-              <i class="bi bi-plus-square-fill"></i>
-              New post</span
-            >
+            <div @click="changeTab('add-post')" class="add-post">
+              <span>
+                <i class="bi bi-plus-square-fill"></i>
+                New post</span
+              >
+            </div>
+            <div>
+              <span>{{ `Articles: ` + this.user.posts.length }}</span>
+            </div>
           </div>
+
           <div v-if="tab == 'display-post'" class="user-post-actions">
             <button @click="changeTab('edit-post')">Edit</button>
             <button @click="deletePost">Delete</button>
@@ -193,7 +198,7 @@ export default {
       const form = new FormData(event.target);
       const title = form.get("title");
       const abstract = form.get("abstract");
-      const body = form.get("body");
+      const body = document.getElementById("body").innerHTML;
       const id = JSON.parse(localStorage.getItem("user")).id;
       const tags = [...document.querySelectorAll(".selected-tag")];
       const tagsContent = [];
@@ -238,6 +243,8 @@ export default {
         `,
       };
 
+      console.log(body);
+
       const response = await fetch("http://localhost:3000/graphql", {
         method: "POST",
         headers: {
@@ -275,7 +282,7 @@ export default {
       const tagsContent = [];
 
       for (let i = 0; i < tags.length; i++) {
-        tagsContent.push(tags[0].innerText);
+        tagsContent.push(tags[i].innerText);
       }
 
       if (!title.length) {
@@ -449,8 +456,11 @@ export default {
   border-bottom: none;
 }
 
-.add-post {
-  margin-left: 1em;
+.header-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0em 1em;
   font-family: "Pridi", serif;
 }
 
@@ -469,6 +479,20 @@ export default {
   text-align: start;
   height: 92%;
   overflow-y: scroll;
+}
+
+.posts::-webkit-scrollbar {
+  display: block;
+}
+
+.posts::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+.posts::-webkit-scrollbar-thumb {
+  background: rgb(15, 15, 15);
+  border-radius: 10px;
+  border: solid white 3px;
 }
 
 .post-miniature {

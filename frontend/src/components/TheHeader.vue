@@ -1,6 +1,6 @@
 <template>
   <header>
-    <router-link to="/">
+    <router-link :to="user ? '/dashboard' : '/'">
       <h1>Blogging</h1>
     </router-link>
 
@@ -22,6 +22,9 @@ export default {
   computed: {
     route() {
       return this.$route.path;
+    },
+    user() {
+      return JSON.parse(localStorage.getItem("user")).id;
     },
   },
 };

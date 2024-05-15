@@ -24,6 +24,20 @@ body {
   height: 100%;
 }
 
+body::-webkit-scrollbar {
+  display: block;
+}
+
+body::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+body::-webkit-scrollbar-thumb {
+  background: rgb(15, 15, 15);
+  border-radius: 10px;
+  border: solid rgb(53, 219, 109) 3px;
+}
+
 #wrapper,
 #app,
 html {

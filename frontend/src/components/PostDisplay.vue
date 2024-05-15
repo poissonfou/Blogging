@@ -8,7 +8,7 @@
         ` | Updated on ${updatedTime.split(" ")[0]}`
       }}</span>
     </div>
-    <p>{{ body }}</p>
+    <div id="body"></div>
   </div>
 </template>
 
@@ -22,6 +22,9 @@ export default {
     "updatedTime",
     "notUpdated",
   ],
+  mounted() {
+    document.getElementById("body").innerHTML = this.$props.body;
+  },
 };
 </script>
 
@@ -43,7 +46,7 @@ export default {
   margin: 0em;
 }
 
-.display-post p {
+.display-post div {
   font-family: "Zilla Slab", serif;
   font-size: 1.5rem;
   margin: 0.5em 0em;

@@ -1,5 +1,6 @@
 <template>
   <div class="article-inputs">
+    <text-edit-tooltip id="tooltip"></text-edit-tooltip>
     <form @submit="submitFunction" :id="idProp && idProp">
       <label for="title">Title</label>
       <input
@@ -11,20 +12,21 @@
       <label for="abstract">Abstract</label>
       <textarea
         name="abstract"
-        id=""
+        id="abstract"
         cols="30"
         rows="5"
         placeholder="Give an introduction to your article!"
         :value="abstractProp && abstractProp.length ? abstractProp : ''"
       ></textarea>
       <label for="body">Body</label>
-      <textarea
+      <div
+        id="body"
+        tabindex="0"
+        contenteditable="true"
+        role="textbox"
+        spellcheck="true"
         name="body"
-        id=""
-        cols="50"
-        rows="15"
-        :value="bodyProp && bodyProp.length ? bodyProp : ''"
-      ></textarea>
+      ></div>
       <div class="tags-container">
         <div>
           <p>Tags</p>
@@ -57,6 +59,8 @@
 </template>
 
 <script>
+import TextEditTooltip from "./TextEditTooltip.vue";
+
 export default {
   props: [
     "submitFunction",
@@ -66,6 +70,9 @@ export default {
     "tagsProps",
     "idProp",
   ],
+  components: {
+    TextEditTooltip,
+  },
   data() {
     return {
       tags: [
@@ -93,6 +100,38 @@ export default {
 
       this.tags.push(tag);
     },
+  },
+  mounted() {
+    const textBody = document.getElementById("body");
+    const tooltip = document.getElementById("tooltip");
+
+    let lastYPosition = null;
+
+    textBody.addEventListener("mousemove", (event) => {
+      const selection = String(window.getSelection());
+      if (selection == "") return;
+
+      let X = event.pageX;
+      let Y = event.pageY;
+
+      if (tooltip.style.top == "") {
+        lastYPosition = Y + 10;
+        tooltip.style.top = Y - 58 + "px";
+        tooltip.style.left = X + "px";
+        tooltip.classList.remove("hidden");
+      } else {
+        if (Y <= lastYPosition && Y >= lastYPosition - 10) {
+          tooltip.style.left = X + "px";
+          tooltip.classList.remove("hidden");
+          return;
+        }
+      }
+    });
+
+    textBody.innerHTML =
+      this.$props.bodyProp && this.$props.bodyProp.length
+        ? this.$props.bodyProp
+        : "";
   },
 };
 </script>
@@ -123,6 +162,22 @@ export default {
 .article-inputs label {
   font-family: "Pridi", serif;
   font-size: 1.5rem;
+}
+
+#body {
+  border: solid 2px black;
+  border-radius: 5px;
+  height: 20em;
+  font-family: "Zilla Slab", serif;
+  font-size: 1.3rem;
+  user-select: text;
+  word-break: break-word;
+  white-space: pre-wrap;
+  padding: 0.3em 0.5em;
+}
+
+#body:hover {
+  cursor: text;
 }
 
 .tags-container div:first-child {
@@ -166,7 +221,7 @@ export default {
   display: inline-block;
   margin-right: 0.3em;
   margin-top: 0.3em;
-  background: rgb(53, 219, 178);
+  background: #4059ad;
   padding: 0.5em;
   border-radius: 10px;
 }
