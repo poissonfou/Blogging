@@ -1,5 +1,11 @@
 <template>
-  <form>
+  <form
+    :enctype="
+      this.$route.path == '/welcome'
+        ? 'multipart/form-data'
+        : 'application/x-www-form-urlencoded'
+    "
+  >
     <div class="wrapper">
       <slot></slot>
     </div>

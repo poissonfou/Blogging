@@ -15,6 +15,9 @@ module.exports = buildSchema(`
         name: String!
         picture: String
         posts: [PostData]
+        followers: [String]
+        following: [String]
+        tag: String
     }
 
     type PostData{

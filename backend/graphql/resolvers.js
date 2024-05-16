@@ -102,6 +102,8 @@ module.exports = {
       name: signupInput.name,
       email: signupInput.email,
       password: password,
+      followers: JSON.stringify([]),
+      following: JSON.stringify([]),
     });
 
     if (!newUser) {
@@ -189,7 +191,14 @@ module.exports = {
       posts[i].dataValues.images = JSON.parse(p.images);
     }
 
-    return { name: userData.name, picture: userData.picture, posts: posts };
+    return {
+      name: userData.name,
+      picture: userData.picture,
+      posts: posts,
+      followers: JSON.parse(userData.followers),
+      following: JSON.parse(userData.following),
+      tag: userData.tag,
+    };
   },
   addPost: async ({ postInput }) => {
     const title = postInput.title;

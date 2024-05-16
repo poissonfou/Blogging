@@ -123,7 +123,7 @@ import PostDisplay from "../components/PostDisplay.vue";
 export default {
   data() {
     return {
-      user: { name: "", picture: "", posts: [] },
+      user: { name: "", picture: "", posts: [], followers: [], following: [] },
       filteredPosts: [],
       tagsUserArticles: [],
       tab: "posts",
@@ -155,6 +155,9 @@ export default {
                 createdAt
                 updatedAt
               }
+              followers
+              following
+              tag
              }
           }
         `,

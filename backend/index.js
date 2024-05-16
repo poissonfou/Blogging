@@ -1,6 +1,9 @@
 const express = require("express");
 const { createHandler } = require("graphql-http/lib/use/express");
 const { ruruHTML } = require("ruru/server");
+const multer = require("multer");
+const fs = require("fs");
+const path = require("path");
 
 const graphqlSchema = require("./graphql/schemas");
 const graphqlResolver = require("./graphql/resolvers");
@@ -10,6 +13,8 @@ const User = require("./models/user");
 const Post = require("./models/post");
 
 const app = express();
+
+app.use(express.static(path.join(__dirname, "images")));
 
 app.use((req, res, next) => {
   res.setHeader("Access-Control-Allow-Origin", "*");
@@ -22,6 +27,64 @@ app.use((req, res, next) => {
     return res.sendStatus(200);
   }
   next();
+});
+
+const fileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, "images");
+  },
+  filename: (req, file, cb) => {
+    console.log("here");
+    cb(null, req.query.id + "-" + file.originalname);
+  },
+});
+
+const fileFilter = (req, file, cb) => {
+  if (
+    file.mimetype === "image/png" ||
+    file.mimetype === "image/jpg" ||
+    file.mimetype === "image/jpeg"
+  ) {
+    cb(null, true);
+  } else {
+    cb(null, false);
+  }
+};
+
+app.use(express.json());
+
+app.use(
+  multer({ storage: fileStorage, fileFilter: fileFilter }).single("picture")
+);
+
+app.post("/savetag", (req, res) => {
+  console.log(req.body, "here");
+  const img = req.file;
+  const tag = req.body.userTag;
+  const id = req.query.id;
+
+  User.findByPk(id).then((user) => {
+    if (!user) {
+      return res.json({ message: "Failed to fetch user" }).status(422);
+    }
+
+    user.tag = `@${tag}`;
+    if (img) {
+      user.picture = id + "-" + img.originalname;
+    }
+
+    user.save().then((user) => {
+      return res.json({ message: "Success" }).status(201);
+    });
+  });
+});
+
+app.get("/images/:name", (req, res, next) => {
+  let name = req.params.name;
+  let pathImg = path.join(__dirname, "images", name);
+  const file = fs.createReadStream(pathImg);
+  res.setHeader("Content-Type", "image");
+  file.pipe(res);
 });
 
 app.use(

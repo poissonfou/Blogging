@@ -1,13 +1,17 @@
 <template>
   <div class="user">
-    <div v-if="!user.picture">{{ user.name[0] }}</div>
-    <div v-else>
-      <img :src="user.picture" alt="user picture" />
+    <div v-if="user.picture == ''" class="no-pic">{{ user.name[0] }}</div>
+    <div v-else class="img">
+      <img
+        :src="'http://localhost:3000/images/' + user.picture"
+        alt="user picture"
+      />
     </div>
     <h3>{{ user.name }}</h3>
+    <span>{{ user.tag }}</span>
     <div class="follow-info">
-      <span>0 Followers</span>
-      <span>0 Following</span>
+      <span>{{ `Followers ${user.followers.length}` }}</span>
+      <span>{{ `Following ${user.following.length}` }}</span>
     </div>
     <div class="tabs">
       <span @click="changeTab('posts')">Posts</span>
@@ -22,6 +26,9 @@
 <script>
 export default {
   props: ["user", "changeTab"],
+  mounted() {
+    console.log(this.$props.user);
+  },
 };
 </script>
 
@@ -30,16 +37,13 @@ export default {
   background-color: white;
   border-radius: 5px;
   border: solid 2px black;
-}
-
-.user {
   display: flex;
   flex-direction: column;
   align-items: center;
   font-family: "Pridi", serif;
 }
 
-.user div:first-child {
+.user .no-pic {
   background-color: rgb(46, 190, 94);
   width: fit-content;
   padding: 0.7rem 1em;
@@ -50,8 +54,25 @@ export default {
   margin-top: 0.2em;
 }
 
+.img {
+  background-color: rgb(46, 190, 94);
+  padding: 0.3em;
+  padding-bottom: 0em;
+  border-radius: 100%;
+  color: white;
+  font-family: "Pridi", serif;
+  margin-top: 0.2em;
+}
+
 .user h3 {
   margin: 0;
+}
+
+.img img {
+  width: 5em;
+  height: 5em;
+  border-radius: 50%;
+  margin-top: 0.1em;
 }
 
 .link {

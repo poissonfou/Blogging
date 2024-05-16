@@ -154,7 +154,7 @@ export default {
         JSON.stringify({ ...responseData.data.signup })
       );
 
-      this.$router.push({ path: "/dashboard" });
+      this.$router.push({ path: "/welcome" });
     },
     async update(event) {
       event.preventDefault();
