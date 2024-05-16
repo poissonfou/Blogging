@@ -451,7 +451,7 @@ export default {
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
   background-color: white;
-  height: 100%;
+  height: 99.5%;
   border: solid 3px black;
   border-bottom: none;
 }
@@ -477,7 +477,7 @@ export default {
   padding: 0em 1em;
   padding-top: 0.5em;
   text-align: start;
-  height: 92%;
+  height: 31em;
   overflow-y: scroll;
 }
 

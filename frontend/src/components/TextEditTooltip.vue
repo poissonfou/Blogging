@@ -10,11 +10,47 @@
 </template>
 
 <script>
-let timesTagsWereAdded = { count: 0, firstElement: -1 };
 let indexesSelections = [];
+let idxSelCorrected = [];
 
 export default {
   methods: {
+    merge(left, right) {
+      let results = [];
+      let i = 0,
+        j = 0;
+
+      while (i < left.length && j < right.length) {
+        if (left[i].start < right[j].start) {
+          results.push(left[i]);
+          i++;
+        } else {
+          results.push(right[j]);
+          j++;
+        }
+      }
+
+      while (i < left.length) {
+        results.push(left[i]);
+        i++;
+      }
+
+      while (j < right.length) {
+        results.push(right[j]);
+        j++;
+      }
+
+      return results;
+    },
+    mergeSort(arr) {
+      if (arr.length <= 1) return arr;
+
+      const mid = Math.floor(arr.length / 2);
+      const left = this.mergeSort(arr.slice(0, mid));
+      const right = this.mergeSort(arr.slice(mid));
+
+      return this.merge(left, right);
+    },
     getSelectionRange(element) {
       let start = 0,
         end = 0;
@@ -38,104 +74,103 @@ export default {
         end = start + range.text.length;
       }
 
-      if (
-        start > timesTagsWereAdded.firstElement &&
-        timesTagsWereAdded.firstElement !== -1
-      ) {
-        start = start + 7 * timesTagsWereAdded.count;
-        end = end + 7 * timesTagsWereAdded.count;
-      }
-
-      if (
-        start < timesTagsWereAdded.firstElement ||
-        timesTagsWereAdded.firstElement == -1
-      )
-        timesTagsWereAdded.firstElement = start;
-
-      timesTagsWereAdded.count++;
-
       return { start, end };
     },
     styleText(el) {
       const textBody = document.getElementById("body");
+      const tooltip = document.getElementById("tooltip");
       const text = textBody.innerHTML;
 
       let { start, end } = this.getSelectionRange(textBody);
+
+      //checks for selection crossing already edited area;
+      for (let i = 0; i < indexesSelections.length; i++) {
+        if (
+          (start > indexesSelections[i].start &&
+            start < indexesSelections[i].end) ||
+          (end > indexesSelections[i].start && end < indexesSelections[i].end)
+        )
+          return;
+      }
+
+      //checks for repeated selection.
       const idxRepeatedEntry = indexesSelections
         .map((el) => el.start)
         .indexOf(start);
 
-      if (idxRepeatedEntry !== -1) {
+      if (
+        idxRepeatedEntry !== -1 &&
+        indexesSelections[idxRepeatedEntry].el == el
+      ) {
         indexesSelections.splice(idxRepeatedEntry, 1);
+      } else {
+        indexesSelections.push({ start, end, el });
       }
 
-      console.log("start " + start, "end " + end);
+      //checks for overarching selection.
+      indexesSelections = this.mergeSort(indexesSelections);
+      idxSelCorrected = JSON.parse(JSON.stringify([...indexesSelections]));
 
-      for (let i = 0; i < indexesSelections.length; i++) {
+      let i = 0;
+      while (i < indexesSelections.length) {
         if (
-          start - 7 > indexesSelections[i].start &&
-          start - 7 < indexesSelections[i].end
+          indexesSelections[i].start == indexesSelections[i + 1]?.start &&
+          indexesSelections[i].end == indexesSelections[i + 1]?.end
         ) {
-          console.log("hwew");
-          indexesSelections[i].end = start - 7;
-        }
-
-        if (
-          end > indexesSelections[i].start &&
-          start < indexesSelections[i].start &&
-          i == 0
-        ) {
-          console.log("hhhhhhkkkkkk");
-          indexesSelections[i].start += 7;
-        }
-
-        if (
-          end - 7 > indexesSelections[i].start &&
-          start - 7 < indexesSelections[i].start
-        ) {
-          console.log("hhhhhhkkkkkk");
-          indexesSelections[i].start = start + 7;
+          idxSelCorrected[i].start = indexesSelections[i].start + 7 * i;
+          idxSelCorrected[i].end = indexesSelections[i].end + 7 * i;
+          idxSelCorrected[i + 1].start = indexesSelections[i].start + 3;
+          idxSelCorrected[i + 1].end = indexesSelections[i].end + 7;
+          i++;
+          i++;
+        } else {
+          if (
+            start < indexesSelections[i].start &&
+            end > indexesSelections.end
+          ) {
+            idxSelCorrected[i].start = indexesSelections[i].start + 7 * i + 3;
+            idxSelCorrected[i].end = indexesSelections[i].end + 7 * i + 3;
+          } else {
+            idxSelCorrected[i].start = indexesSelections[i].start + 7 * i;
+            idxSelCorrected[i].end = indexesSelections[i].end + 7 * i;
+          }
+          i++;
         }
       }
-
-      indexesSelections.push({ start, end, el });
 
       let finalHTML = text;
 
-      if (indexesSelections.length >= 1) {
-        finalHTML = text
-          .replaceAll("<b>", "")
-          .replaceAll("</b>", "")
-          .replaceAll("<i>", "")
-          .replaceAll("<i>", "");
-
-        console.log(finalHTML);
-      }
+      finalHTML = text
+        .replaceAll("<b>", "")
+        .replaceAll("</b>", "")
+        .replaceAll("<i>", "")
+        .replaceAll("<i>", "");
 
       let leftTextContent;
       let rightTextContent;
 
-      for (let i = 0; i <= indexesSelections.length - 1; i++) {
+      for (let i = 0; i <= idxSelCorrected.length - 1; i++) {
         leftTextContent = "";
         rightTextContent = "";
         let selectedText = finalHTML.slice(
-          indexesSelections[i].start,
-          indexesSelections[i].end
+          idxSelCorrected[i].start,
+          idxSelCorrected[i].end
         );
         selectedText =
-          `<${indexesSelections[i].el}>` +
+          `<${idxSelCorrected[i].el}>` +
           selectedText +
-          `</${indexesSelections[i].el}>`;
+          `</${idxSelCorrected[i].el}>`;
 
-        if (indexesSelections[i].start !== 0)
-          leftTextContent = finalHTML.slice(0, indexesSelections[i].start);
-        if (indexesSelections[i].end !== finalHTML.length)
-          rightTextContent = finalHTML.slice(indexesSelections[i].end);
+        if (idxSelCorrected[i].start !== 0)
+          leftTextContent = finalHTML.slice(0, idxSelCorrected[i].start);
+        if (idxSelCorrected[i].end !== finalHTML.length)
+          rightTextContent = finalHTML.slice(idxSelCorrected[i].end);
+
         finalHTML = leftTextContent + selectedText + rightTextContent;
-        console.log(finalHTML);
       }
 
       textBody.innerHTML = finalHTML;
+      tooltip.classList.add("hidden");
     },
   },
 };
