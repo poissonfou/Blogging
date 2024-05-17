@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
 const Post = require("../models/post");
+const { where } = require("sequelize");
 
 module.exports = {
   login: async ({ email, password }) => {
@@ -200,6 +201,39 @@ module.exports = {
       tag: userData.tag,
     };
   },
+  search: async ({ query }) => {
+    const results = await User.findAll({
+      where: {
+        name: query,
+      },
+    });
+
+    if (!results.length) {
+      return { message: "No results found" };
+    }
+
+    const response = [];
+
+    for (let i = 0; i < results.length; i++) {
+      const posts = await results[i].getPosts();
+      posts.map((p) => {
+        p.dataValues.tags = JSON.parse(p.dataValues.tags);
+        p.dataValues.images = JSON.parse(p.dataValues.images);
+      });
+      const userData = results[i].dataValues;
+      response.push({
+        id: userData.id,
+        name: userData.name,
+        picture: userData.picture,
+        posts: posts,
+        followers: JSON.parse(userData.followers),
+        following: JSON.parse(userData.following),
+        tag: userData.tag,
+      });
+    }
+
+    return response;
+  },
   addPost: async ({ postInput }) => {
     const title = postInput.title;
     const abstract = postInput.abstract;
@@ -315,5 +349,57 @@ module.exports = {
     await post.destroy();
 
     return { message: "Success" };
+  },
+  follow: async ({ id, userId }) => {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return { message: "User not found." };
+    }
+
+    user.following = JSON.parse(user.following);
+    user.following.push(id);
+    user.following = JSON.stringify(user.following);
+    await user.save();
+
+    const userFollowed = await User.findByPk(id);
+
+    if (!userFollowed) {
+      return { message: "User being followed not found." };
+    }
+
+    userFollowed.followers = JSON.parse(userFollowed.followers);
+    userFollowed.followers.push(userId);
+    userFollowed.followers = JSON.stringify(userFollowed.followers);
+    await userFollowed.save();
+
+    return { message: "Following added." };
+  },
+  unfollow: async ({ id, userId }) => {
+    const user = await User.findByPk(userId);
+
+    if (!user) {
+      return { message: "User not found." };
+    }
+
+    user.following = JSON.parse(user.following);
+    const idx = user.following.indexOf(id);
+    user.following.splice(idx, 1);
+    user.following = JSON.stringify(user.following);
+    await user.save();
+
+    const userUnfollowed = await User.findByPk(id);
+
+    if (!userUnfollowed) {
+      return { message: "User not found." };
+    }
+
+    userUnfollowed.followers = JSON.parse(userUnfollowed.followers);
+    const idxUnfollowed = userUnfollowed.followers.indexOf(userId);
+    userUnfollowed.followers.splice(idxUnfollowed, 1);
+    userUnfollowed.followers = JSON.stringify(userUnfollowed.followers);
+    await userUnfollowed.save();
+
+    return { message: "Following added." };
   },
 };

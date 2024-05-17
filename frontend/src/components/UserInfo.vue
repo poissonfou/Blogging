@@ -1,6 +1,6 @@
 <template>
   <div class="user">
-    <div v-if="user.picture == ''" class="no-pic">{{ user.name[0] }}</div>
+    <div v-if="!user.picture" class="no-pic">{{ user.name[0] }}</div>
     <div v-else class="img">
       <img
         :src="'http://localhost:3000/images/' + user.picture"

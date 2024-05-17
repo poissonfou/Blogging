@@ -86,6 +86,9 @@
               :idProp="selectedPost.id"
             ></the-user-post>
           </div>
+          <div v-if="tab == 'search'" class="search">
+            <search-results :results="results" :user="user"></search-results>
+          </div>
         </div>
       </section>
       <section class="info">
@@ -119,6 +122,7 @@
 import TheUserPost from "../components/TheUserPost.vue";
 import UserInfo from "../components/UserInfo.vue";
 import PostDisplay from "../components/PostDisplay.vue";
+import SearchResults from "../components/SearchResults.vue";
 
 export default {
   data() {
@@ -130,10 +134,21 @@ export default {
       selectedPost: null,
     };
   },
+  computed: {
+    results() {
+      return this.$store.state.search;
+    },
+  },
+  watch: {
+    results() {
+      this.changeTab("search");
+    },
+  },
   components: {
     TheUserPost,
     UserInfo,
     PostDisplay,
+    SearchResults,
   },
   methods: {
     async fetchUser() {
@@ -476,7 +491,8 @@ export default {
   color: rgb(53, 219, 109);
 }
 
-.posts {
+.posts,
+.search {
   padding: 0em 1em;
   padding-top: 0.5em;
   text-align: start;
@@ -484,15 +500,18 @@ export default {
   overflow-y: scroll;
 }
 
-.posts::-webkit-scrollbar {
+.posts::-webkit-scrollbar,
+.search::-webkit-scrollbar {
   display: block;
 }
 
-.posts::-webkit-scrollbar-track {
+.posts::-webkit-scrollbar-track,
+.search::-webkit-scrollbar-track {
   background-color: transparent;
 }
 
-.posts::-webkit-scrollbar-thumb {
+.posts::-webkit-scrollbar-thumb,
+.search::-webkit-scrollbar-thumb {
   background: rgb(15, 15, 15);
   border-radius: 10px;
   border: solid white 3px;
