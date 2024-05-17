@@ -1,23 +1,29 @@
 <template>
   <div class="auth-body">
     <h1>Welcome to <span>Blogging!</span></h1>
-    <the-form @submit="saveTag" name="form">
-      <div class="input-box">
-        <label for="userTag">User tag</label>
-        <input
-          type="text"
-          name="userTag"
-          placeholder="Create a unique user tag."
-          id="userTag"
-        />
-      </div>
+    <div class="flex-container">
+      <the-form @submit="saveTagAndImage" name="form">
+        <div class="input-box">
+          <label for="userTag">User tag</label>
+          <input
+            type="text"
+            name="userTag"
+            placeholder="Create a unique user tag."
+            id="userTag"
+          />
+        </div>
 
-      <div class="input-box">
-        <label for="picture">Choose a profile picture</label>
-        <input type="file" name="picture" id="picture" />
+        <div class="input-box">
+          <label for="picture">Choose a profile picture</label>
+          <input type="file" name="picture" id="picture" @change="preview" />
+        </div>
+        <button>Done</button>
+      </the-form>
+      <div class="img-box">
+        <h2 id="no-img-msg">Choose an image</h2>
+        <img src="" id="image-preview" class="hidden" />
       </div>
-      <button>Done</button>
-    </the-form>
+    </div>
   </div>
 </template>
 
@@ -28,7 +34,7 @@ export default {
     TheForm,
   },
   methods: {
-    async saveTag(event) {
+    async saveTagAndImage(event) {
       event.preventDefault();
       const form = new FormData();
       const picture = document.forms["form"]["picture"].files[0];
@@ -49,6 +55,17 @@ export default {
       }
 
       this.$router.push("/dashboard");
+    },
+    preview(event) {
+      const img = document.getElementById("image-preview");
+      const msg = document.getElementById("no-img-msg");
+      const [file] = event.target.files;
+      if (file) {
+        msg.classList.add("hidden");
+        img.src = URL.createObjectURL(file);
+        img.alt = "image preview";
+        img.classList.remove("hidden");
+      }
     },
   },
 };
@@ -80,5 +97,50 @@ h1 span {
   border-top-right-radius: 10px;
   border: solid 3px black;
   border-bottom: none;
+}
+
+.flex-container {
+  display: flex;
+  gap: 2em;
+}
+
+#picture::file-selector-button {
+  background: rgb(53, 219, 109);
+  background: linear-gradient(
+    90deg,
+    rgb(53, 219, 109) 0%,
+    rgba(183, 251, 169, 1) 100%
+  );
+  border: none;
+  border-radius: 5px;
+  font-family: "Pridi", serif;
+}
+
+#picture::file-selector-button:hover {
+  cursor: pointer;
+}
+
+.img-box {
+  border: solid 2px black;
+  border-radius: 5px;
+  width: 100%;
+  height: 20em;
+  text-align: center;
+  font-family: "Zilla Slab", serif;
+}
+
+.img-box h2 {
+  margin-top: 38%;
+}
+
+.img-box img {
+  height: 20em;
+  border-radius: 3px;
+  object-fit: cover;
+  width: 100%;
+}
+
+.hidden {
+  display: none;
 }
 </style>

@@ -526,7 +526,7 @@ export default {
 
 .tag {
   margin-right: 0.3em;
-  background: #4059ad;
+  background: rgb(64, 89, 173);
   padding: 0.5em;
   border-radius: 8px;
   font-size: 0.8rem;
