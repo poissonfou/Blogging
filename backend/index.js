@@ -115,6 +115,13 @@ User.hasMany(Post);
 sequelize
   .sync()
   .then(() => {
-    app.listen(3000, () => console.log("Server running on port 3000"));
+    const server = app.listen(3000, () =>
+      console.log("Server running on port 3000")
+    );
+    const socket = require("./socket").init(server);
+
+    socket.on("connection", (socket) => {
+      console.log("Client connected");
+    });
   })
   .catch((err) => console.log(err));

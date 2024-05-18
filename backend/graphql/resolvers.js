@@ -4,7 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
 const Post = require("../models/post");
-const { where } = require("sequelize");
+const io = require("../socket");
 
 module.exports = {
   login: async ({ email, password }) => {
@@ -358,6 +358,7 @@ module.exports = {
     }
 
     user.following = JSON.parse(user.following);
+    if(user.following.includes(id)) return {message: 'User already follows this account'}
     user.following.push(id);
     user.following = JSON.stringify(user.following);
     await user.save();
@@ -373,6 +374,12 @@ module.exports = {
     userFollowed.followers = JSON.stringify(userFollowed.followers);
     await userFollowed.save();
 
+    io.getIO().emit("follow", {
+      action: "follow",
+      follower: { name: user.name, picture: user.picture, id: user.id },
+      following: userFollowed.tag,
+    });
+
     return { message: "Following added." };
   },
   unfollow: async ({ id, userId }) => {
@@ -384,6 +391,7 @@ module.exports = {
 
     user.following = JSON.parse(user.following);
     const idx = user.following.indexOf(id);
+    if(idx == -1) return {message: 'Unfollowed account not found.'}
     user.following.splice(idx, 1);
     user.following = JSON.stringify(user.following);
     await user.save();

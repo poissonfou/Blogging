@@ -113,6 +113,14 @@
         <div v-if="tab == 'add-post'">
           <div></div>
         </div>
+
+        <div class="notifications">
+          <the-notification
+            v-for="notif in notifications"
+            :key="notif.follower.id"
+            :follower="notif.follower"
+          ></the-notification>
+        </div>
       </section>
     </main>
   </div>
@@ -123,6 +131,9 @@ import TheUserPost from "../components/TheUserPost.vue";
 import UserInfo from "../components/UserInfo.vue";
 import PostDisplay from "../components/PostDisplay.vue";
 import SearchResults from "../components/SearchResults.vue";
+import TheNotification from "../components/TheNotification.vue";
+
+import openSocket from "socket.io-client";
 
 export default {
   data() {
@@ -132,6 +143,7 @@ export default {
       tagsUserArticles: [],
       tab: "posts",
       selectedPost: null,
+      notifications: [],
     };
   },
   computed: {
@@ -149,6 +161,7 @@ export default {
     UserInfo,
     PostDisplay,
     SearchResults,
+    TheNotification,
   },
   methods: {
     async fetchUser() {
@@ -444,6 +457,18 @@ export default {
   },
   created() {
     this.fetchUser();
+    const socket = openSocket("http://localhost:3000", {
+      transports: ["websocket", "polling", "flashsocket"],
+    });
+    socket.on("follow", (data) => {
+      if (data.following !== this.user.tag) return;
+      if (data.action == "follow") {
+        this.notifications.push({
+          follower: data.follower,
+        });
+        this.user.followers.push(data.follower.id);
+      }
+    });
   },
 };
 </script>
@@ -599,6 +624,7 @@ export default {
 .info {
   padding: 0.5em;
   padding-left: 0em;
+  position: relative;
 }
 
 .user-tags {
@@ -621,5 +647,16 @@ export default {
 
 .user-tags span:hover {
   cursor: pointer;
+}
+
+.notifications {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  right: 0.1em;
+  bottom: 0.1em;
+  width: 100%;
+  overflow: hidden;
 }
 </style>

@@ -26,7 +26,7 @@
         </div>
       </div>
 
-      <div v-if="user.following.includes(result.id)">
+      <div v-if="user.following.includes(String(result.id))">
         <button @click="unfollow(result.id)" class="button-unfollow">
           Unfollow
         </button>
@@ -68,7 +68,7 @@ export default {
         return;
       }
 
-      this.$props.user.following.push(id);
+      this.$props.user.following.push(String(id));
     },
     async unfollow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;

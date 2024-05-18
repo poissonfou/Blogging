@@ -25,7 +25,9 @@ export default {
       return this.$route.path;
     },
     user() {
-      return JSON.parse(localStorage.getItem("user")).id;
+      return localStorage.getItem("user")
+        ? JSON.parse(localStorage.getItem("user")).id
+        : null;
     },
   },
   methods: {
