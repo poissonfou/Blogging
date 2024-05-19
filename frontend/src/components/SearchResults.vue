@@ -21,7 +21,7 @@
       </div>
     </div>
 
-    <div v-if="user.following.includes(result.id)">
+    <div v-if="user.following.includes(String(result.id))">
       <button @click="unfollow(result.id)" class="button-unfollow">
         Unfollow
       </button>
@@ -165,24 +165,23 @@ export default {
 }
 
 .button-follow {
-  background-color: rgb(46, 190, 94);
-  color: black;
-  font-family: "Pridi", serif;
   border: solid 2px black;
   border-radius: 5px;
-  height: 2em;
-  padding: 0em 1em;
+  background-color: rgb(53, 219, 109);
   font-size: 1.3rem;
+  padding: 0.3em 1.5em;
+  font-family: "Zilla Slab", serif;
+  box-shadow: 2px 2px 0px black;
 }
 
 .button-unfollow {
-  color: rgb(0, 0, 0);
-  font-family: "Pridi", serif;
-  border: solid 2px rgb(0, 0, 0);
+  border: solid 2px black;
   border-radius: 5px;
-  height: 2em;
-  padding: 0em 1em;
+  background-color: rgb(53, 219, 109);
   font-size: 1.3rem;
+  padding: 0.3em 1em;
+  font-family: "Zilla Slab", serif;
+  box-shadow: 2px 2px 0px black;
 }
 
 .search-result button:hover {

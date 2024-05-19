@@ -197,6 +197,41 @@ module.exports = {
       tag: user.tag,
     };
   },
+  getPost: async ({ postId, authorId }) => {
+    if (postId < 0 || typeof postId !== "number") {
+      const error = new Error("Invalid parameter provided.");
+      error.status = 500;
+      throw error;
+    }
+
+    const user = await User.findByPk(authorId);
+
+    if (!user) {
+      const error = new Error("No user found.");
+      error.status = 500;
+      throw error;
+    }
+
+    const posts = await user.getPosts();
+    let selectedPost = null;
+
+    for (let i = 0; i < posts.length; i++) {
+      if (posts[i].dataValues.id == postId) {
+        selectedPost = posts[i].dataValues;
+        break;
+      }
+    }
+
+    if (!selectedPost) {
+      const error = new Error("Post not found.");
+      error.status = 500;
+      throw error;
+    }
+
+    selectedPost.tags = JSON.parse(selectedPost.tags);
+
+    return { author: user, ...selectedPost };
+  },
   search: async ({ query }) => {
     const results = await User.findAll({
       where: {
@@ -271,6 +306,17 @@ module.exports = {
     if (!post) {
       throw new Error("Coulnd't save post.");
     }
+
+    io.getIO().emit("post", {
+      action: "post",
+      user: {
+        name: user.name,
+        picture: user.picture,
+        id: user.id,
+        postId: post.id,
+        postTitle: post.title,
+      },
+    });
 
     return {
       message: "Success",

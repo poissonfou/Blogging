@@ -1,21 +1,45 @@
 <template>
-  <div class="notif-body" :id="follower.id">
-    <div v-if="!follower.picture" class="no-pic">{{ follower.name[0] }}</div>
+  <div
+    class="notif-body"
+    :id="notification.data.id"
+    @click="notificationRedirect(notification.data.id)"
+  >
+    <div v-if="!notification.data.picture" class="no-pic">
+      {{ notification.data.name[0] }}
+    </div>
     <div v-else class="img">
       <img
-        :src="'http://localhost:3000/images/' + follower.picture"
+        :src="'http://localhost:3000/images/' + notification.data.picture"
         alt="user picture"
       />
     </div>
-    <span>{{ follower.name + " has followed you." }}</span>
+    <span>{{
+      notification.type == "follow"
+        ? notification.data.name + " has followed you."
+        : notification.data.name + " has a new post."
+    }}</span>
   </div>
 </template>
 
 <script>
 export default {
-  props: ["follower"],
+  props: ["notification"],
+  methods: {
+    notificationRedirect(id) {
+      const typeOfNotification = this.$props.notification.type;
+      if (typeOfNotification == "follow") {
+        this.$router.push("/profile/" + id);
+      } else {
+        const postId = this.$props.notification.data.postId;
+        const title = this.$props.notification.data.title;
+        this.$router.push("/article/" + id + "/" + postId + "/" + title);
+      }
+    },
+  },
   mounted() {
-    const notification = document.getElementById(this.$props.follower.id);
+    const notification = document.getElementById(
+      this.$props.notification.data.id
+    );
     setTimeout(() => {
       notification.classList.add("popup");
     }, 100);
@@ -43,6 +67,10 @@ export default {
   transition: all 1s;
   margin-bottom: 0.2em;
   transform: translateY(3.8em);
+}
+
+.notif-body:hover {
+  cursor: pointer;
 }
 
 .popup {

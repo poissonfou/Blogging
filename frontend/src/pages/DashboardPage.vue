@@ -59,16 +59,6 @@
               </div>
             </div>
           </div>
-          <div v-if="tab == 'display-post'" class="display-post">
-            <post-display
-              :title="selectedPost.title"
-              :abstract="selectedPost.abstract"
-              :body="selectedPost.body"
-              :createdTime="selectedPost.createdAt"
-              :updatedTime="selectedPost.updatedAt"
-              :notUpdated="selectedPost.notUpdated"
-            ></post-display>
-          </div>
           <div v-if="tab == 'add-post'">
             <the-user-post :submitFunction="addPost"></the-user-post>
           </div>
@@ -87,7 +77,7 @@
               v-for="[index, result] in results.entries()"
               :key="index"
               :result="result"
-              :user="user"
+              :user="this.user"
               @click="showProfile(result)"
             ></search-results>
           </div>
@@ -118,8 +108,8 @@
         <div class="notifications">
           <the-notification
             v-for="notif in notifications"
-            :key="notif.follower.id"
-            :follower="notif.follower"
+            :key="notif.data.id"
+            :notification="notif"
           ></the-notification>
         </div>
       </section>
@@ -130,7 +120,6 @@
 <script>
 import TheUserPost from "../components/TheUserPost.vue";
 import UserInfo from "../components/UserInfo.vue";
-import PostDisplay from "../components/PostDisplay.vue";
 import SearchResults from "../components/SearchResults.vue";
 import TheNotification from "../components/TheNotification.vue";
 
@@ -162,7 +151,6 @@ export default {
   components: {
     TheUserPost,
     UserInfo,
-    PostDisplay,
     SearchResults,
     TheNotification,
   },
@@ -174,6 +162,7 @@ export default {
         query: `
           {
              getUser(id: ${id}){
+              id
               name
               picture
               posts {
@@ -429,34 +418,35 @@ export default {
       this.tab = "filtered-posts";
     },
     showPost(id) {
-      this.tab = "display-post";
       const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
       const post = JSON.parse(JSON.stringify(this.user.posts[postIdx]));
-      post.notUpdated = +post.createdAt == +post.updatedAt;
+      this.$router.push(
+        "/article/" + this.user.id + "/" + id + "/" + post.title
+      );
 
-      const dateCreation = new Date(+post.createdAt);
-      const dateUpdate = new Date(+post.updatedAt);
-      post.createdAt =
-        dateCreation.getUTCDay() +
-        "/" +
-        dateCreation.getUTCMonth() +
-        "/" +
-        dateCreation.getUTCFullYear();
-      +" " + dateCreation.getHours();
-      +"h" + dateCreation.getMinutes();
-      +"m" + dateCreation.getSeconds();
+      // const dateCreation = new Date(+post.createdAt);
+      // const dateUpdate = new Date(+post.updatedAt);
+      // post.createdAt =
+      //   dateCreation.getUTCDay() +
+      //   "/" +
+      //   dateCreation.getUTCMonth() +
+      //   "/" +
+      //   dateCreation.getUTCFullYear();
+      // +" " + dateCreation.getHours();
+      // +"h" + dateCreation.getMinutes();
+      // +"m" + dateCreation.getSeconds();
 
-      post.updatedAt =
-        dateUpdate.getUTCDay() +
-        "/" +
-        dateUpdate.getUTCMonth() +
-        "/" +
-        dateUpdate.getUTCFullYear() +
-        " " +
-        dateUpdate.getHours();
-      +"h" + dateUpdate.getMinutes();
-      +"m" + dateUpdate.getSeconds();
-      this.selectedPost = post;
+      // post.updatedAt =
+      //   dateUpdate.getUTCDay() +
+      //   "/" +
+      //   dateUpdate.getUTCMonth() +
+      //   "/" +
+      //   dateUpdate.getUTCFullYear() +
+      //   " " +
+      //   dateUpdate.getHours();
+      // +"h" + dateUpdate.getMinutes();
+      // +"m" + dateUpdate.getSeconds();
+      // this.selectedPost = post;
     },
     async showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
@@ -464,16 +454,27 @@ export default {
   },
   created() {
     this.fetchUser();
+
     const socket = openSocket("http://localhost:3000", {
       transports: ["websocket", "polling", "flashsocket"],
     });
+
     socket.on("follow", (data) => {
       if (data.following !== this.user.tag) return;
       if (data.action == "follow") {
         this.notifications.push({
-          follower: data.follower,
+          data: data.follower,
+          type: "follow",
         });
         this.$store.commit("followed", data.follower.id);
+      }
+    });
+
+    socket.on("post", (data) => {
+      if (!this.$store.state.user.following.includes(String(data.user.id)))
+        return;
+      if (data.action == "post") {
+        this.notifications.push({ data: data.user, type: "post" });
       }
     });
   },

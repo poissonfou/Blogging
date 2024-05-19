@@ -183,36 +183,11 @@ export default {
       this.$store.commit("unfollow", idx);
     },
     async showPost(id) {
-      this.tab = "display-post";
-      const postIdx = this.$store.state.user.posts.map((p) => p.id).indexOf(id);
-      const post = JSON.parse(
-        JSON.stringify(this.$store.state.user.posts[postIdx])
+      const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
+      const post = JSON.parse(JSON.stringify(this.user.posts[postIdx]));
+      this.$router.push(
+        "/article/" + this.user.id + "/" + id + "/" + post.title
       );
-      post.notUpdated = +post.createdAt == +post.updatedAt;
-
-      const dateCreation = new Date(+post.createdAt);
-      const dateUpdate = new Date(+post.updatedAt);
-      post.createdAt =
-        dateCreation.getUTCDay() +
-        "/" +
-        dateCreation.getUTCMonth() +
-        "/" +
-        dateCreation.getUTCFullYear();
-      +" " + dateCreation.getHours();
-      +"h" + dateCreation.getMinutes();
-      +"m" + dateCreation.getSeconds();
-
-      post.updatedAt =
-        dateUpdate.getUTCDay() +
-        "/" +
-        dateUpdate.getUTCMonth() +
-        "/" +
-        dateUpdate.getUTCFullYear() +
-        " " +
-        dateUpdate.getHours();
-      +"h" + dateUpdate.getMinutes();
-      +"m" + dateUpdate.getSeconds();
-      this.selectedPost = post;
     },
   },
   async mounted() {
@@ -321,7 +296,7 @@ main {
   border: solid 2px black;
   border-radius: 5px;
   background-color: rgb(53, 219, 109);
-  font-size: 1.5rem;
+  font-size: 1.3rem;
   padding: 0.3em 1em;
   font-family: "Zilla Slab", serif;
   box-shadow: 2px 2px 0px black;

@@ -22,6 +22,7 @@ module.exports = buildSchema(`
     }
 
     type PostData{
+        author: User
         id: Int!
         title: String!
         abstract: String!
@@ -59,6 +60,7 @@ module.exports = buildSchema(`
 
     type RootQuery{
         getUser(id: Int!): User!
+        getPost(postId: Int!, authorId: Int!):PostData
         login(email: String!, password: String!): AuthData!
         search(query: String): [User]
     }
