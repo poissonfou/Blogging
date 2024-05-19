@@ -1,46 +1,40 @@
 <template>
-  <div>
-    <div
-      v-for="[index, result] in results.entries()"
-      :key="index"
-      class="search-result"
-    >
-      <div class="result-info">
-        <div v-if="!result.picture" class="no-pic">
-          {{ result.name[0] }}
+  <div class="search-result">
+    <div class="result-info">
+      <div v-if="!result.picture" class="no-pic">
+        {{ result.name[0] }}
+      </div>
+      <div v-else class="img">
+        <img
+          :src="'http://localhost:3000/images/' + result.picture"
+          alt="profile-picture"
+        />
+      </div>
+      <div>
+        <div class="identifiers">
+          <h3>{{ result.name }}</h3>
+          <span>{{ result.tag }}</span>
         </div>
-        <div v-else class="img">
-          <img
-            :src="'http://localhost:3000/images/' + result.picture"
-            alt="profile-picture"
-          />
-        </div>
-        <div>
-          <div class="identifiers">
-            <h3>{{ result.name }}</h3>
-            <span>{{ result.tag }}</span>
-          </div>
 
-          <span>{{ "Followers " + result.followers.length }}</span>
-          <span>{{ "Following " + result.following.length }}</span>
-        </div>
+        <span>{{ "Followers " + result.followers.length }}</span>
+        <span>{{ "Following " + result.following.length }}</span>
       </div>
+    </div>
 
-      <div v-if="user.following.includes(String(result.id))">
-        <button @click="unfollow(result.id)" class="button-unfollow">
-          Unfollow
-        </button>
-      </div>
-      <div v-else>
-        <button @click="follow(result.id)" class="button-follow">Follow</button>
-      </div>
+    <div v-if="user.following.includes(result.id)">
+      <button @click="unfollow(result.id)" class="button-unfollow">
+        Unfollow
+      </button>
+    </div>
+    <div v-else>
+      <button @click="follow(result.id)" class="button-follow">Follow</button>
     </div>
   </div>
 </template>
 
 <script>
 export default {
-  props: ["results", "user"],
+  props: ["result", "user"],
   methods: {
     async follow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -68,7 +62,7 @@ export default {
         return;
       }
 
-      this.$props.user.following.push(String(id));
+      this.$store.commit("follow", id);
     },
     async unfollow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -96,8 +90,8 @@ export default {
         return;
       }
 
-      const idx = this.$props.user.following.indexOf(id);
-      this.$props.user.following.splice(idx, 1);
+      const idx = this.$store.state.user.following.indexOf(id);
+      this.$store.commit("unfollow", idx);
     },
   },
 };
@@ -113,6 +107,10 @@ export default {
   padding: 0.5em;
   margin-bottom: 0.5em;
   font-family: "Zilla Slab", serif;
+}
+
+.search-result:hover {
+  cursor: pointer;
 }
 
 .result-info {

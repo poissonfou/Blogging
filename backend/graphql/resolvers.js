@@ -170,20 +170,15 @@ module.exports = {
       throw error;
     }
 
-    const user = await User.findAll({
-      where: {
-        id: id,
-      },
-    });
+    const user = await User.findByPk(id);
 
-    if (!user.length) {
+    if (!user) {
       const error = new Error("No user found.");
       error.status = 500;
       throw error;
     }
 
-    const userData = user[0].dataValues;
-    const posts = await user[0].getPosts();
+    const posts = await user.getPosts();
 
     for (let i = 0; i < posts.length; i++) {
       let p = posts[i].dataValues;
@@ -193,12 +188,13 @@ module.exports = {
     }
 
     return {
-      name: userData.name,
-      picture: userData.picture,
+      id: user.id,
+      name: user.name,
+      picture: user.picture,
       posts: posts,
-      followers: JSON.parse(userData.followers),
-      following: JSON.parse(userData.following),
-      tag: userData.tag,
+      followers: JSON.parse(user.followers),
+      following: JSON.parse(user.following),
+      tag: user.tag,
     };
   },
   search: async ({ query }) => {
@@ -358,7 +354,8 @@ module.exports = {
     }
 
     user.following = JSON.parse(user.following);
-    if(user.following.includes(id)) return {message: 'User already follows this account'}
+    if (user.following.includes(id))
+      return { message: "User already follows this account" };
     user.following.push(id);
     user.following = JSON.stringify(user.following);
     await user.save();
@@ -391,7 +388,7 @@ module.exports = {
 
     user.following = JSON.parse(user.following);
     const idx = user.following.indexOf(id);
-    if(idx == -1) return {message: 'Unfollowed account not found.'}
+    if (idx == -1) return { message: "Unfollowed account not found." };
     user.following.splice(idx, 1);
     user.following = JSON.stringify(user.following);
     await user.save();

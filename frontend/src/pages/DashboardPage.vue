@@ -4,11 +4,7 @@
       <section class="content">
         <div class="content-inner-container">
           <div
-            v-if="
-              tab !== 'add-post' &&
-              tab !== 'edit-post' &&
-              tab !== 'display-post'
-            "
+            v-if="tab == 'posts' || tab == 'filtered-post'"
             class="header-content"
           >
             <div @click="changeTab('add-post')" class="add-post">
@@ -87,7 +83,13 @@
             ></the-user-post>
           </div>
           <div v-if="tab == 'search'" class="search">
-            <search-results :results="results" :user="user"></search-results>
+            <search-results
+              v-for="[index, result] in results.entries()"
+              :key="index"
+              :result="result"
+              :user="user"
+              @click="showProfile(result)"
+            ></search-results>
           </div>
         </div>
       </section>
@@ -113,7 +115,6 @@
         <div v-if="tab == 'add-post'">
           <div></div>
         </div>
-
         <div class="notifications">
           <the-notification
             v-for="notif in notifications"
@@ -138,7 +139,6 @@ import openSocket from "socket.io-client";
 export default {
   data() {
     return {
-      user: { name: "", picture: "", posts: [], followers: [], following: [] },
       filteredPosts: [],
       tagsUserArticles: [],
       tab: "posts",
@@ -149,6 +149,9 @@ export default {
   computed: {
     results() {
       return this.$store.state.search;
+    },
+    user() {
+      return this.$store.state.user;
     },
   },
   watch: {
@@ -219,8 +222,9 @@ export default {
       }
 
       this.tagsUserArticles = tags;
-      this.user = responseData.data.getUser;
+      this.$store.commit("setUser", responseData.data.getUser);
     },
+
     changeTab(tab) {
       this.tab = tab;
     },
@@ -292,7 +296,7 @@ export default {
       }
 
       const post = responseData.data.addPost.data;
-      this.user.posts.push(post);
+      this.$store.commit("addPost", post);
 
       const tagsPost = [...this.tagsUserArticles];
       for (let i = 0; i < post.tags.length; i++) {
@@ -370,7 +374,7 @@ export default {
 
       const post = responseData.data.editPost.data;
       const oldPostIdx = this.user.posts.map((p) => p.id).indexOf(post.id);
-      this.user.posts[oldPostIdx] = post;
+      this.$store.commit("editPost", { idx: oldPostIdx, post });
 
       const tagsPost = [...this.tagsUserArticles];
       for (let i = 0; i < post.tags.length; i++) {
@@ -409,7 +413,7 @@ export default {
       }
 
       const postIdx = this.user.posts.map((post) => post.id).indexOf(id);
-      this.user.posts.splice(postIdx, 1);
+      this.$store.commit("deletePost", postIdx);
 
       this.tab = "posts";
     },
@@ -454,6 +458,9 @@ export default {
       +"m" + dateUpdate.getSeconds();
       this.selectedPost = post;
     },
+    async showProfile(profile) {
+      this.$router.push("/profile/" + profile.id);
+    },
   },
   created() {
     this.fetchUser();
@@ -466,7 +473,7 @@ export default {
         this.notifications.push({
           follower: data.follower,
         });
-        this.user.followers.push(data.follower.id);
+        this.$store.commit("followed", data.follower.id);
       }
     });
   },
