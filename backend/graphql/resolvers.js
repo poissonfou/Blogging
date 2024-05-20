@@ -4,6 +4,7 @@ const jwt = require("jsonwebtoken");
 
 const User = require("../models/user");
 const Post = require("../models/post");
+const Comment = require("../models/comment");
 const io = require("../socket");
 
 module.exports = {
@@ -217,6 +218,8 @@ module.exports = {
 
     for (let i = 0; i < posts.length; i++) {
       if (posts[i].dataValues.id == postId) {
+        const comments = await posts[i].getComments();
+        posts[i].dataValues.comments = comments;
         selectedPost = posts[i].dataValues;
         break;
       }
@@ -230,7 +233,18 @@ module.exports = {
 
     selectedPost.tags = JSON.parse(selectedPost.tags);
 
-    return { author: user, ...selectedPost };
+    console.log(selectedPost);
+    for (let i = 0; i < selectedPost.comments.length; i++) {
+      const comment = selectedPost.comments[i];
+      comment.dataValues.likes = JSON.parse(comment.dataValues.likes);
+      comment.dataValues.dislikes = JSON.parse(comment.dataValues.dislikes);
+    }
+
+    return {
+      author: user,
+      comments: [{ ...selectedPost.comments.dataValues }],
+      ...selectedPost,
+    };
   },
   search: async ({ query }) => {
     const results = await User.findAll({
@@ -452,5 +466,63 @@ module.exports = {
     await userUnfollowed.save();
 
     return { message: "Following added." };
+  },
+  comment: async ({ postId, comment, author, picture, authorId }) => {
+    console.log(postId, comment, author, picture, authorId);
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      throw new Error("Coulnd't find post.");
+    }
+
+    const newComment = await post.createComment({
+      content: comment,
+      author,
+      picture,
+      authorId,
+      likes: JSON.stringify([]),
+      dislikes: JSON.stringify([]),
+    });
+
+    if (!newComment) {
+      throw new Error("Coulnd't create comment.");
+    }
+
+    console.log(newComment);
+
+    return {
+      ...newComment.dataValues,
+    };
+  },
+  commentInteraction: async ({ type, userId, commentId }) => {
+    const comment = await Comment.findByPk(commentId);
+
+    if (!comment) {
+      throw new Error("Coundn't find comment");
+    }
+
+    const oppositeAction = type == "likes" ? "dislikes" : "likes";
+    const arr = JSON.parse(comment[type]);
+    const isSelected = arr.includes(userId);
+
+    const oppositeArr = JSON.parse(comment[oppositeAction]);
+    const oppositeIdx = oppositeArr.indexOf(userId);
+
+    if (!isSelected) {
+      if (oppositeIdx !== -1) {
+        oppositeArr.splice(oppositeIdx, 1);
+        comment[oppositeAction] = JSON.stringify(oppositeArr);
+      }
+      arr.push(userId);
+    } else {
+      const idx = arr.indexOf(userId);
+      arr.splice(idx, 1);
+    }
+
+    comment[type] = JSON.stringify(arr);
+
+    await comment.save();
+
+    return { message: "Sucess" };
   },
 };

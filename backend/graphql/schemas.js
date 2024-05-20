@@ -31,6 +31,17 @@ module.exports = buildSchema(`
         tags: [String]!
         createdAt: String
         updatedAt: String
+        comments: [Comment]
+    }
+
+    type Comment {
+        id: Int
+        content: String!
+        author: String!
+        picture: String
+        authorId: Int!
+        likes: [Int!]
+        dislikes: [Int!]
     }
 
     input addPostInput{
@@ -73,6 +84,8 @@ module.exports = buildSchema(`
         deletePost(id: Int): Message!
         follow(id: Int, userId: Int): Message
         unfollow(id: Int, userId: Int): Message
+        comment(postId: Int, comment: String, author: String, picture: String, authorId: Int): Comment
+        commentInteraction(type: String!, userId: Int!, commentId: Int!): Message!
     }
 
     schema {

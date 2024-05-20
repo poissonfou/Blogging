@@ -11,6 +11,7 @@ const sequelize = require("./database");
 
 const User = require("./models/user");
 const Post = require("./models/post");
+const Comment = require("./models/comment");
 
 const app = express();
 
@@ -111,6 +112,9 @@ app.get("/", (_req, res) => {
 
 Post.belongsTo(User, { constraints: true, onDelete: "CASCADE" });
 User.hasMany(Post);
+
+Comment.belongsTo(Post, { constraints: true, onDelete: "CASCADE" });
+Post.hasMany(Comment);
 
 sequelize
   .sync()

@@ -4,7 +4,7 @@
       <h1>Blogging</h1>
     </router-link>
 
-    <nav v-if="route !== '/dashboard'">
+    <nav v-if="!user">
       <router-link to="/auth?mode=login">Login</router-link>
       <router-link to="/auth?mode=signup">Signup</router-link>
     </nav>
@@ -14,6 +14,9 @@
         <label for="query"></label>
         <input type="text" name="query" placeholder="search" />
       </form>
+      <nav>
+        <router-link to="/" @click="logout"> Logout </router-link>
+      </nav>
     </div>
   </header>
 </template>
@@ -25,7 +28,8 @@ export default {
       return this.$route.path;
     },
     user() {
-      return localStorage.getItem("user")
+      return localStorage.getItem("user") &&
+        localStorage.getItem("user") !== "null"
         ? JSON.parse(localStorage.getItem("user")).id
         : null;
     },
@@ -77,6 +81,9 @@ export default {
 
       console.log(responseData);
     },
+    logout() {
+      localStorage.setItem("user", null);
+    },
   },
 };
 </script>
@@ -88,6 +95,15 @@ header {
   background-color: rgb(53, 219, 109);
   align-items: center;
   padding: 0em 1em;
+}
+
+header div {
+  display: flex;
+}
+
+header div a {
+  margin: 0;
+  margin-left: 0.5em;
 }
 
 h1 {

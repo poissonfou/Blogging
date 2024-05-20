@@ -60,17 +60,17 @@
             </div>
           </div>
           <div v-if="tab == 'add-post'">
-            <the-user-post :submitFunction="addPost"></the-user-post>
+            <the-new-post :submitFunction="addPost"></the-new-post>
           </div>
           <div v-if="tab == 'edit-post'">
-            <the-user-post
+            <the-new-post
               :submitFunction="editPost"
               :titleProp="selectedPost.title"
               :abstractProp="selectedPost.abstract"
               :bodyProp="selectedPost.body"
               :tagsProps="selectedPost.tags"
               :idProp="selectedPost.id"
-            ></the-user-post>
+            ></the-new-post>
           </div>
           <div v-if="tab == 'search'" class="search">
             <search-results
@@ -118,7 +118,7 @@
 </template>
 
 <script>
-import TheUserPost from "../components/TheUserPost.vue";
+import TheNewPost from "../components/TheNewPost.vue";
 import UserInfo from "../components/UserInfo.vue";
 import SearchResults from "../components/SearchResults.vue";
 import TheNotification from "../components/TheNotification.vue";
@@ -149,7 +149,7 @@ export default {
     },
   },
   components: {
-    TheUserPost,
+    TheNewPost,
     UserInfo,
     SearchResults,
     TheNotification,
