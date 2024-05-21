@@ -165,10 +165,7 @@
         ></user-info>
         <div
           v-if="
-            tagsUserArticles.length &&
-            tab !== 'add-posts' &&
-            tab !== 'display-post' &&
-            tab !== 'edit-post'
+            tab !== 'add-post' && tab !== 'display-post' && tab !== 'edit-post'
           "
           class="user-tags"
         >
@@ -180,8 +177,28 @@
             {{ tag }}
           </span>
         </div>
-        <div v-if="tab == 'add-post'">
-          <div></div>
+        <div v-if="tab == 'add-post'" class="ai-section">
+          <div class="ai-box">
+            <div class="ai-name">
+              <h1>Phil</h1>
+              <span>
+                <i class="bi bi-google"></i>
+                Gemini
+              </span>
+            </div>
+            <div
+              id="ai-textbox"
+              tabindex="1"
+              contenteditable="true"
+              role="textbox"
+              spellcheck="true"
+            ></div>
+            <div class="btn">
+              <button @click="submitPrompt">
+                Generate <i class="bi bi-stars"></i>
+              </button>
+            </div>
+          </div>
         </div>
         <div class="notifications">
           <the-notification
@@ -207,7 +224,7 @@ export default {
     return {
       filteredPosts: [],
       tagsUserArticles: [],
-      tab: "posts",
+      tab: "add-post",
       selectedPost: null,
       notifications: [],
       displayConnections: null,
@@ -620,6 +637,28 @@ export default {
         .indexOf(id);
       this.$store.commit("unfollow", idx);
     },
+    async submitPrompt() {
+      const textbox = document.getElementById("ai-textbox");
+      const prompt = textbox.innerText;
+
+      if (prompt == "") return;
+
+      const response = await fetch("http://localhost:3000/ai", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ prompt }),
+      });
+
+      if (!response.ok) {
+        console.log("something went wrong", await response.json());
+        return;
+      }
+
+      const output = await response.json();
+      textbox.innerText = output.response;
+    },
   },
   created() {
     this.fetchUser();
@@ -926,6 +965,79 @@ export default {
 }
 
 .user-tags span:hover {
+  cursor: pointer;
+}
+
+.ai-section {
+  padding: 0.3em 0em;
+}
+
+.ai-box {
+  background-color: white;
+  border: solid 2px black;
+  padding: 0.5em;
+  border-radius: 5px;
+}
+
+.ai-name {
+  display: flex;
+  align-items: center;
+}
+
+.ai-name h1 {
+  margin: 0;
+  font-family: "Pridi", serif;
+}
+
+.ai-name span {
+  margin-left: 0.5em;
+  font-size: 0.8rem;
+}
+
+#ai-textbox {
+  height: 12em;
+  border: solid 1px black;
+  border-radius: 5px;
+  margin-bottom: 0.5em;
+  overflow: scroll;
+  user-select: text;
+  word-break: break-word;
+  white-space: pre-wrap;
+  font-family: "Zilla Slab", serif;
+  font-size: 1.2rem;
+  padding: 0.3em;
+}
+
+#ai-textbox::-webkit-scrollbar {
+  display: block;
+}
+
+#ai-textbox::-webkit-scrollbar-track {
+  background-color: transparent;
+}
+
+#ai-textbox::-webkit-scrollbar-thumb {
+  background: rgb(15, 15, 15);
+  border-radius: 10px;
+  border: solid rgb(53, 219, 109) 3px;
+}
+
+.ai-box button {
+  background-color: rgb(53, 219, 109);
+  border: solid 1px black;
+  box-shadow: 2px 2px 0px black;
+  font-family: "Pridi", serif;
+  font-size: 1rem;
+  border-radius: 5px;
+  padding: 0.3em;
+}
+
+.btn {
+  display: flex;
+  justify-content: end;
+}
+
+.ai-box button:hover {
   cursor: pointer;
 }
 

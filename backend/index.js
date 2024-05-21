@@ -4,6 +4,7 @@ const { ruruHTML } = require("ruru/server");
 const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
+const { GoogleGenerativeAI } = require("@google/generative-ai");
 
 const graphqlSchema = require("./graphql/schemas");
 const graphqlResolver = require("./graphql/resolvers");
@@ -86,6 +87,18 @@ app.get("/images/:name", (req, res, next) => {
   const file = fs.createReadStream(pathImg);
   res.setHeader("Content-Type", "image");
   file.pipe(res);
+});
+
+const genAI = new GoogleGenerativeAI("AIzaSyA1FR6TMPcxCJZm6x-Ji6OTKGmoXO0W2Xw");
+const model = genAI.getGenerativeModel({ model: "gemini-pro" });
+
+app.post("/ai", async (req, res) => {
+  const prompt = req.body.prompt;
+  const result = await model.generateContent(prompt);
+  const response = await result.response;
+  const text = response.text();
+
+  res.json({ response: text }).status(200);
 });
 
 app.use(
