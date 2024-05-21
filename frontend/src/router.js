@@ -6,6 +6,7 @@ import DashboardPage from "./pages/DashboardPage.vue";
 import WelcomePage from "./pages/WelcomePage.vue";
 import ProfilePage from "./pages/ProfilePage.vue";
 import PostDisplayPage from "./pages/PostDisplayPage.vue";
+import SearchPage from "./pages/SearchPage.vue";
 
 const router = createRouter({
   history: createWebHistory(),
@@ -18,6 +19,11 @@ const router = createRouter({
       path: "/dashboard",
       name: "dashboard",
       components: { default: DashboardPage },
+    },
+    {
+      path: "/search",
+      name: "search",
+      components: { default: SearchPage },
     },
     {
       path: "/article/:authorId/:id/:title",

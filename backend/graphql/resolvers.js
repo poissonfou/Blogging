@@ -408,26 +408,42 @@ module.exports = {
   },
   follow: async ({ id, userId }) => {
     const user = await User.findByPk(userId);
+    const userFollowed = await User.findByPk(id);
 
     if (!user) {
       return { message: "User not found." };
     }
 
     user.following = JSON.parse(user.following);
-    if (user.following.includes(id))
-      return { message: "User already follows this account" };
-    user.following.push(id);
+    if (user.following.length) {
+      if (user.following.map((fol) => fol.id).indexOf(id))
+        return { message: "User already follows this account" };
+    }
+
+    user.following.push(
+      JSON.stringify({
+        name: userFollowed.name,
+        picture: userFollowed.picture,
+        id: userFollowed.id,
+        tag: userFollowed.tag,
+      })
+    );
     user.following = JSON.stringify(user.following);
     await user.save();
-
-    const userFollowed = await User.findByPk(id);
 
     if (!userFollowed) {
       return { message: "User being followed not found." };
     }
 
     userFollowed.followers = JSON.parse(userFollowed.followers);
-    userFollowed.followers.push(userId);
+    userFollowed.followers.push(
+      JSON.stringify({
+        name: user.name,
+        picture: user.picture,
+        id: user.id,
+        tag: user.tag,
+      })
+    );
     userFollowed.followers = JSON.stringify(userFollowed.followers);
     await userFollowed.save();
 
@@ -437,7 +453,12 @@ module.exports = {
       following: userFollowed.tag,
     });
 
-    return { message: "Following added." };
+    return {
+      name: userFollowed.name,
+      picture: userFollowed.picture,
+      id: userFollowed.id,
+      tag: userFollowed.tag,
+    };
   },
   unfollow: async ({ id, userId }) => {
     const user = await User.findByPk(userId);
@@ -447,7 +468,7 @@ module.exports = {
     }
 
     user.following = JSON.parse(user.following);
-    const idx = user.following.indexOf(id);
+    const idx = user.following.map((fol) => JSON.parse(fol).id).indexOf(id);
     if (idx == -1) return { message: "Unfollowed account not found." };
     user.following.splice(idx, 1);
     user.following = JSON.stringify(user.following);
@@ -460,7 +481,9 @@ module.exports = {
     }
 
     userUnfollowed.followers = JSON.parse(userUnfollowed.followers);
-    const idxUnfollowed = userUnfollowed.followers.indexOf(userId);
+    const idxUnfollowed = userUnfollowed.followers
+      .map((fol) => JSON.parse(fol).id)
+      .indexOf(userId);
     userUnfollowed.followers.splice(idxUnfollowed, 1);
     userUnfollowed.followers = JSON.stringify(userUnfollowed.followers);
     await userUnfollowed.save();

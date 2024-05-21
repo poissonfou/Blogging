@@ -10,8 +10,12 @@
     <h3>{{ user.name }}</h3>
     <span>{{ user.tag }}</span>
     <div class="follow-info">
-      <span>{{ `Followers ${user.followers.length}` }}</span>
-      <span>{{ `Following ${user.following.length}` }}</span>
+      <span @click="showConnections('followers')">{{
+        `Followers ${user.followers.length}`
+      }}</span>
+      <span @click="showConnections('following')">{{
+        `Following ${user.following.length}`
+      }}</span>
     </div>
     <div class="tabs">
       <span @click="changeTab('posts')">Posts</span>
@@ -25,7 +29,7 @@
 
 <script>
 export default {
-  props: ["user", "changeTab"],
+  props: ["user", "changeTab", "showConnections"],
   mounted() {
     console.log(this.$props.user);
   },
@@ -90,6 +94,10 @@ export default {
 .follow-info span,
 .tabs span {
   margin-right: 0.5em;
+}
+
+.follow-info span:hover {
+  cursor: pointer;
 }
 
 .tabs {

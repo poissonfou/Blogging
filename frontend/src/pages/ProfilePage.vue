@@ -22,7 +22,11 @@
           </div>
         </div>
 
-        <div v-if="this.$store.state.user.following.includes(String(user.id))">
+        <div
+          v-if="
+            loggedUser.following.map((fol) => fol.id).indexOf(user.id) !== -1
+          "
+        >
           <button @click="unfollow(user.id)" class="button-unfollow">
             Unfollow
           </button>
@@ -64,6 +68,11 @@ export default {
       filteredPosts: [],
     };
   },
+  computed: {
+    loggedUser() {
+      return this.$store.state.user;
+    },
+  },
   methods: {
     async fetchUser(id, isUserStore) {
       const QUERY = {
@@ -99,15 +108,16 @@ export default {
         body: JSON.stringify(QUERY),
       });
 
-      const responseData = await response.json();
+      const data = await response.json();
+      const user = data.data.getUser;
 
-      if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+      if (user.errors) {
+        throw new Error(user.errors[0].message);
       }
 
-      console.log(responseData.data.getUser);
+      console.log(user);
 
-      const posts = responseData.data.getUser.posts;
+      const posts = user.posts;
       const tags = [];
 
       for (let i = 0; i < posts.length; i++) {
@@ -118,11 +128,19 @@ export default {
         }
       }
 
+      for (let i = 0; i < user.followers.length; i++) {
+        user.followers[i] = JSON.parse(user.followers[i]);
+      }
+
+      for (let j = 0; j < user.following.length; j++) {
+        user.following[j] = JSON.parse(user.following[j]);
+      }
+
       if (!isUserStore) {
         this.tagsUserArticles = tags;
-        this.user = responseData.data.getUser;
+        this.user = user;
       } else {
-        this.$store.commit("setUser", responseData.data.getUser);
+        this.$store.commit("setUser", user);
       }
     },
     async follow(id) {
@@ -132,7 +150,10 @@ export default {
         query: `
             mutation{
               follow(id: ${id}, userId: ${userId}){
-                message
+                name
+                id
+                picture
+                tag
               }
             }
             `,
@@ -151,7 +172,11 @@ export default {
         return;
       }
 
-      this.$store.commit("follow", id);
+      const data = await response.json();
+
+      console.log(data);
+
+      this.$store.commit("follow", data.data.follow);
     },
     async unfollow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -179,7 +204,11 @@ export default {
         return;
       }
 
-      const idx = this.$store.state.user.following.indexOf(id);
+      console.log(await response.json());
+
+      const idx = this.$store.state.user.following
+        .map((fol) => fol.id)
+        .indexOf(id);
       this.$store.commit("unfollow", idx);
     },
     async showPost(id) {

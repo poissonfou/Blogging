@@ -1,7 +1,4 @@
 export default {
-  setSearch(state, payload) {
-    state.search = payload;
-  },
   setUser(state, payload) {
     state.user = payload;
   },

@@ -44,6 +44,13 @@ module.exports = buildSchema(`
         dislikes: [Int!]
     }
 
+    type Follower {
+        name: String
+        id: Int
+        picture: String
+        tag: String
+    }
+
     input addPostInput{
         title: String!
         abstract: String!
@@ -82,7 +89,7 @@ module.exports = buildSchema(`
         addPost(postInput: addPostInput): Message!
         editPost(postInput: editPostInput): Message!
         deletePost(id: Int): Message!
-        follow(id: Int, userId: Int): Message
+        follow(id: Int, userId: Int): Follower
         unfollow(id: Int, userId: Int): Message
         comment(postId: Int, comment: String, author: String, picture: String, authorId: Int): Comment
         commentInteraction(type: String!, userId: Int!, commentId: Int!): Message!

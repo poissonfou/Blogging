@@ -1,7 +1,7 @@
 <template>
   <div id="wrapper-board">
-    <main class="main-container">
-      <section class="content">
+    <main class="main-container" id="grid">
+      <section class="content" id="content">
         <div class="content-inner-container">
           <div
             v-if="tab == 'posts' || tab == 'filtered-post'"
@@ -72,19 +72,97 @@
               :idProp="selectedPost.id"
             ></the-new-post>
           </div>
-          <div v-if="tab == 'search'" class="search">
-            <search-results
-              v-for="[index, result] in results.entries()"
+        </div>
+      </section>
+      <section class="connections" v-if="displayConnections">
+        <div class="inner-container-connections">
+          <div v-if="displayConnections == 'followers'" class="followers">
+            <h1>Followers</h1>
+            <div
+              class="follower"
+              v-for="[index, follower] in followers.entries()"
               :key="index"
-              :result="result"
-              :user="this.user"
-              @click="showProfile(result)"
-            ></search-results>
+              @click="showProfile(follower)"
+            >
+              <div class="follower-info">
+                <div v-if="!follower.picture" class="follower-no-pic">
+                  {{ follower.name[0] }}
+                </div>
+                <div v-else class="follower-img">
+                  <img
+                    :src="'http://localhost:3000/images/' + follower.picture"
+                    alt="profile-picture"
+                  />
+                </div>
+                <div>
+                  <div class="follower-identifiers">
+                    <h3>{{ follower.name }}</h3>
+                    <span>{{ follower.tag }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-if="followers.map((fol) => fol.id).indexOf(follow.id) !== -1"
+              >
+                <button @click="unfollow(follower.id)" class="button-unfollow">
+                  Unfollow
+                </button>
+              </div>
+              <div v-else>
+                <button @click="follow(follower.id)" class="button-follow">
+                  Follow
+                </button>
+              </div>
+            </div>
+          </div>
+          <div v-if="displayConnections == 'following'" class="following">
+            <h1>Following</h1>
+            <div
+              v-for="[index, follow] in following.entries()"
+              :key="index"
+              class="follow"
+            >
+              <div class="follow-info">
+                <div v-if="!follow.picture" class="follow-no-pic">
+                  {{ follow.name[0] }}
+                </div>
+                <div v-else class="follow-img">
+                  <img
+                    :src="'http://localhost:3000/images/' + follow.picture"
+                    alt="profile-picture"
+                  />
+                </div>
+                <div>
+                  <div class="follow-identifiers">
+                    <h3>{{ follow.name }}</h3>
+                    <span>{{ follow.tag }}</span>
+                  </div>
+                </div>
+              </div>
+
+              <div
+                v-if="following.map((fol) => fol.id).indexOf(follow.id) !== -1"
+              >
+                <button @click="unfollow(follow.id)" class="button-unfollow">
+                  Unfollow
+                </button>
+              </div>
+              <div v-else>
+                <button @click="follow(follow.id)" class="button-follow">
+                  Follow
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
       <section class="info">
-        <user-info :user="user" :changeTab="changeTab"></user-info>
+        <user-info
+          :user="user"
+          :changeTab="changeTab"
+          :showConnections="showConnections"
+        ></user-info>
         <div
           v-if="
             tagsUserArticles.length &&
@@ -120,7 +198,6 @@
 <script>
 import TheNewPost from "../components/TheNewPost.vue";
 import UserInfo from "../components/UserInfo.vue";
-import SearchResults from "../components/SearchResults.vue";
 import TheNotification from "../components/TheNotification.vue";
 
 import openSocket from "socket.io-client";
@@ -133,25 +210,36 @@ export default {
       tab: "posts",
       selectedPost: null,
       notifications: [],
+      displayConnections: null,
     };
   },
-  computed: {
-    results() {
-      return this.$store.state.search;
+  watch: {
+    displayConnections() {
+      const grid = document.getElementById("grid");
+      const contentDiv = document.getElementById("content");
+      if (this.displayConnections) {
+        grid.classList = "main-container-connection";
+        contentDiv.classList = "content-display-connections";
+      } else {
+        grid.classList = "main-container";
+        contentDiv.classList = "content";
+      }
     },
+  },
+  computed: {
     user() {
       return this.$store.state.user;
     },
-  },
-  watch: {
-    results() {
-      this.changeTab("search");
+    followers() {
+      return this.$store.state.user.followers;
+    },
+    following() {
+      return this.$store.state.user.following;
     },
   },
   components: {
     TheNewPost,
     UserInfo,
-    SearchResults,
     TheNotification,
   },
   methods: {
@@ -191,15 +279,16 @@ export default {
         body: JSON.stringify(QUERY),
       });
 
-      const responseData = await response.json();
+      const data = await response.json();
+      const user = data.data.getUser;
 
-      if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+      if (user.errors) {
+        throw new Error(user.errors[0].message);
       }
 
-      console.log(responseData.data.getUser);
+      console.log(user);
 
-      const posts = responseData.data.getUser.posts;
+      const posts = user.posts;
       const tags = [];
 
       for (let i = 0; i < posts.length; i++) {
@@ -210,10 +299,17 @@ export default {
         }
       }
 
-      this.tagsUserArticles = tags;
-      this.$store.commit("setUser", responseData.data.getUser);
-    },
+      for (let i = 0; i < user.followers.length; i++) {
+        user.followers[i] = JSON.parse(user.followers[i]);
+      }
 
+      for (let j = 0; j < user.following.length; j++) {
+        user.following[j] = JSON.parse(user.following[j]);
+      }
+
+      this.tagsUserArticles = tags;
+      this.$store.commit("setUser", user);
+    },
     changeTab(tab) {
       this.tab = tab;
     },
@@ -448,8 +544,81 @@ export default {
       // +"m" + dateUpdate.getSeconds();
       // this.selectedPost = post;
     },
-    async showProfile(profile) {
+    showConnections(tab) {
+      if (this.displayConnections == tab) {
+        this.displayConnections = null;
+        return;
+      }
+      this.displayConnections = tab;
+    },
+    showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
+    },
+    async follow(id) {
+      const userId = JSON.parse(localStorage.getItem("user")).id;
+
+      const QUERY = {
+        query: `
+            mutation{
+              follow(id: ${id}, userId: ${userId}){
+                name
+                id
+                picture
+                tag
+              }
+            }
+            `,
+      };
+
+      const response = await fetch("http://localhost:3000/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(QUERY),
+      });
+
+      if (!response.ok) {
+        console.log("something went wrong", response);
+        return;
+      }
+
+      const data = await response.json();
+
+      console.log(data);
+
+      this.$store.commit("follow", data.data.follow);
+    },
+    async unfollow(id) {
+      const userId = JSON.parse(localStorage.getItem("user")).id;
+
+      const QUERY = {
+        query: `
+            mutation{
+              unfollow(id: ${id}, userId: ${userId}){
+                message
+              }
+            }
+            `,
+      };
+
+      const response = await fetch("http://localhost:3000/graphql", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(QUERY),
+      });
+
+      if (!response.ok) {
+        console.log("something went wrong", response);
+        return;
+      }
+
+      const idx = this.$store.state.user.following
+        .map((fol) => fol.id)
+        .indexOf(id);
+      this.$store.commit("unfollow", idx);
     },
   },
   created() {
@@ -493,9 +662,21 @@ export default {
   width: 100%;
 }
 
+.main-container-connection {
+  display: grid;
+  grid-template-columns: 1fr 18em 20em;
+  height: 100%;
+  width: 100%;
+}
+
 .content {
   padding: 0.5em;
   padding-bottom: 0em;
+}
+
+.content-display-connections {
+  padding-right: 0em;
+  padding-left: 0.5em;
 }
 
 .content-inner-container {
@@ -627,6 +808,97 @@ export default {
   font-family: "Pridi", serif;
   font-size: 1rem;
   margin-top: 0.5em;
+}
+
+.connections {
+  padding: 0.5em;
+}
+
+.inner-container-connections {
+  border-radius: 5px;
+  background-color: white;
+  height: 85vh;
+  border: solid 2px black;
+  padding: 0.5em;
+  padding-bottom: 0em;
+}
+
+.followers h1,
+.following h1 {
+  font-family: "Pridi", serif;
+  margin: 0;
+}
+
+.follow,
+.follower {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.follow-info,
+.follower-info {
+  display: flex;
+}
+
+.follow-no-pic,
+.follower-no-pic {
+  font-family: "Zilla Slab", serif;
+  font-size: 1.5rem;
+  width: 1.5em;
+  height: 1.5em;
+  border-radius: 50%;
+  text-align: center;
+  padding: 0.2em;
+  padding-bottom: 0em;
+  background-color: rgb(53, 219, 109);
+}
+
+.follow-img img {
+  width: 2.5em;
+  height: 2.5em;
+  border-radius: 50%;
+}
+
+.follow-identifiers,
+.follower-identifiers {
+  margin-left: 0.3em;
+}
+
+.follow-identifiers h3,
+.follower-identifiers h3 {
+  margin: 0;
+  font-family: "Pridi", serif;
+  height: 1em;
+}
+
+.follow-identifiers span,
+.follower-identifiers span {
+  font-family: "Zilla Slab", serif;
+  color: rgb(53, 219, 109);
+}
+
+.follow .button-unfollow,
+.follower .button-unfollow {
+  background-color: rgb(53, 219, 109);
+  border: solid 1px black;
+  border-radius: 5px;
+  font-family: "Pridi", serif;
+  font-size: 1rem;
+}
+
+.follow .button-follow,
+.follower .button-follow {
+  background-color: rgb(53, 219, 109);
+  border: solid 1px black;
+  border-radius: 5px;
+  font-family: "Pridi", serif;
+  font-size: 1rem;
+}
+
+.button-follow:hover,
+.button-unfollow:hover {
+  cursor: pointer;
 }
 
 .info {
