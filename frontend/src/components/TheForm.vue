@@ -45,19 +45,15 @@
 }
 
 :deep(button) {
-  border: none;
-  border-radius: 10px;
-  padding: 0.3em 1em;
-  background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(53, 219, 109) 0%,
-    rgba(183, 251, 169, 1) 100%
-  );
+  border: solid 2px black;
+  border-radius: 5px;
+  box-shadow: -2px 2px 0px black;
+  padding: 0.1em 1.3em;
   width: fit-content;
   font-family: "Pridi", serif;
   font-size: 1.5rem;
   margin-top: 0.5em;
+  background-color: rgb(53, 219, 109);
 }
 
 :deep(button:hover) {

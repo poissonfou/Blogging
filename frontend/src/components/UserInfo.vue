@@ -19,7 +19,7 @@
     </div>
     <div class="tabs">
       <span @click="changeTab('posts')">Posts</span>
-      <span>Feed</span>
+      <span @click="changeTab('feed')">Feed</span>
     </div>
     <div class="link">
       <router-link to="/auth?mode='update'">Update info</router-link>

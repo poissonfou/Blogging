@@ -1,24 +1,50 @@
 <template>
   <div class="article-inputs">
     <text-edit-tooltip id="tooltip"></text-edit-tooltip>
+    <span
+      v-if="error.field == '' && error.msg"
+      class="error-msg"
+      id="general-error"
+      >{{ error.msg }}</span
+    >
+
     <form @submit="submitFunction" :id="idProp && idProp">
       <label for="title">Title</label>
+      <span v-if="error.field == 'title'" class="error-msg" id="title-error">{{
+        error.msg
+      }}</span>
+
       <input
         type="text"
         name="title"
         placeholder="Title"
-        :value="titleProp && titleProp.length ? titleProp : ''"
+        v-model="title"
+        :class="error.field == 'title' ? 'validation-error' : ''"
       />
+
       <label for="abstract">Abstract</label>
+      <span
+        v-if="error.field == 'abstract'"
+        class="error-msg"
+        id="abstract-error"
+        >{{ error.msg }}</span
+      >
+
       <textarea
         name="abstract"
         id="abstract"
         cols="30"
         rows="5"
         placeholder="Give an introduction to your article!"
-        :value="abstractProp && abstractProp.length ? abstractProp : ''"
+        v-model="abstract"
+        :class="error.field == 'abstract' ? 'validation-error' : ''"
       ></textarea>
+
       <label for="body">Body</label>
+      <span v-if="error.field == 'body'" class="error-msg" id="body-error">{{
+        error.msg
+      }}</span>
+
       <div
         id="body"
         tabindex="0"
@@ -26,12 +52,16 @@
         role="textbox"
         spellcheck="true"
         name="body"
+        :class="error.field == 'body' ? 'validation-error' : ''"
       ></div>
       <div class="tags-container">
-        <div>
+        <div class="tags-header">
           <p>Tags</p>
           <span>Choose at least one.</span>
         </div>
+        <span v-if="error.field == 'tags'" class="error-msg" id="tags-error">{{
+          error.msg
+        }}</span>
         <div class="tags-box-items">
           <div v-if="!tagsProps">
             <span v-for="tag in tags" :key="tag" class="tag" @click="selectTag">
@@ -53,7 +83,9 @@
           </form>
         </div>
       </div>
-      <button>{{ idProp ? "Edit" : "Post" }}</button>
+      <button type="submit">
+        {{ idProp ? "Edit" : "Post" }}
+      </button>
     </form>
   </div>
 </template>
@@ -69,6 +101,7 @@ export default {
     "abstractProp",
     "tagsProps",
     "idProp",
+    "error",
   ],
   components: {
     TextEditTooltip,
@@ -87,6 +120,10 @@ export default {
         "News",
         "Politics",
       ],
+      title: "",
+      abstract: "",
+      body: "",
+      validationError: { field: "", msg: null },
     };
   },
   methods: {
@@ -128,10 +165,11 @@ export default {
       }
     });
 
-    textBody.innerHTML =
-      this.$props.bodyProp && this.$props.bodyProp.length
-        ? this.$props.bodyProp
-        : "";
+    textBody.innerHTML = this.$props.bodyProp ? this.$props.bodyProp : "";
+
+    this.abstract = this.$props.abstractProp ? this.$props.abstractProp : "";
+
+    this.title = this.$props.titleProp ? this.$props.titleProp : "";
   },
 };
 </script>
@@ -180,9 +218,14 @@ export default {
   cursor: text;
 }
 
-.tags-container div:first-child {
+.tags-header {
   display: flex;
   align-items: baseline;
+}
+
+.tags-header span {
+  font-family: "Zilla Slab", serif;
+  font-size: 1.1rem;
 }
 
 .tags-items-box {
@@ -195,11 +238,6 @@ export default {
   font-size: 1.5rem;
   margin-right: 0.2em;
   margin-bottom: 0em;
-}
-
-.tags-container span {
-  font-family: "Zilla Slab", serif;
-  font-size: 1.2rem;
 }
 
 .tags-box-items {
@@ -222,8 +260,12 @@ export default {
   margin-right: 0.3em;
   margin-top: 0.3em;
   background: #4059ad;
+  border: solid 2px black;
+  box-shadow: 2px 2px 0px black;
   padding: 0.5em;
   border-radius: 10px;
+  font-family: "Pridi", serif;
+  font-size: 1.2rem;
 }
 
 .tag:hover {
@@ -231,15 +273,11 @@ export default {
 }
 
 .article-inputs button {
-  border: none;
-  border-radius: 10px;
-  padding: 0.3em 1em;
-  background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(53, 219, 109) 0%,
-    rgba(183, 251, 169, 1) 100%
-  );
+  border: solid 2px black;
+  border-radius: 5px;
+  box-shadow: -2px 2px 0px black;
+  background-color: rgb(53, 219, 109);
+  padding: 0.1em 1.3em;
   width: fit-content;
   font-family: "Pridi", serif;
   font-size: 1.5rem;
@@ -251,6 +289,15 @@ export default {
 }
 
 .selected-tag {
-  border: solid 2px black;
+  box-shadow: none;
+}
+
+.error-msg {
+  font-family: "Pridi", serif;
+  font-size: 1.1rem;
+}
+
+.validation-error {
+  border: solid 2px red !important;
 }
 </style>

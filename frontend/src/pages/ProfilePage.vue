@@ -36,30 +36,26 @@
         </div>
       </div>
       <div class="posts">
-        <div
+        <the-post-miniature
           v-for="[index, post] in user.posts.entries()"
           :key="index"
-          class="post-miniature"
+          :titlePost="post.title"
+          :abstract="post.abstract"
+          :tags="post.tags"
           @click="showPost(post.id)"
-        >
-          <h2>{{ post.title }}</h2>
-          <p>{{ post.abstract }}</p>
-          <div>
-            <span
-              v-for="[index, tag] in post.tags.entries()"
-              :key="index"
-              class="tag"
-              >{{ tag }}</span
-            >
-          </div>
-        </div>
+        ></the-post-miniature>
       </div>
     </div>
   </main>
 </template>
 
 <script>
+import ThePostMiniature from "../components/ThePostMiniature.vue";
+
 export default {
+  components: {
+    ThePostMiniature,
+  },
   data() {
     return {
       user: { name: "", picture: "", posts: [], followers: [], following: [] },

@@ -1,6 +1,7 @@
 <template>
   <div class="auth-body">
     <h1>Welcome to <span>Blogging!</span></h1>
+    <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.error }}</span>
     <div class="flex-container">
       <the-form @submit="saveTagAndImage" name="form">
         <div class="input-box">
@@ -10,6 +11,9 @@
             name="userTag"
             placeholder="Create a unique user tag."
             id="userTag"
+            v-model.trim="tag"
+            @blur="validate"
+            :class="errorMsg.field == 'userTag' ? 'error' : ''"
           />
         </div>
 
@@ -29,20 +33,41 @@
 
 <script>
 import TheForm from "../components/TheForm.vue";
+
 export default {
   components: {
     TheForm,
   },
+  data() {
+    return {
+      errorMsg: { field: "", msg: null },
+      tag: "",
+    };
+  },
   methods: {
+    validate() {
+      if (!this.tag.length) {
+        this.errorMsg = { field: "userTag", msg: "Please enter a tag." };
+        return;
+      }
+
+      if (this.errorMsg.msg) this.errorMsg = { field: "", msg: null };
+    },
     async saveTagAndImage(event) {
       event.preventDefault();
       const form = new FormData();
       const picture = document.forms["form"]["picture"].files[0];
-      const userTag = document.getElementById("userTag").value;
+      const userTag = document.getElementById("userTag").value.trim();
+
+      if (!userTag.length) {
+        this.errorMsg = { field: "", msg: "Please enter a user tag." };
+        return;
+      }
+
       const id = JSON.parse(localStorage.getItem("user")).id;
+
       form.append("picture", picture);
-      form.append("userTag", userTag);
-      console.log(form);
+      form.append("userTag", userTag.trim());
 
       const response = await fetch("http://localhost:3000/savetag?id=" + id, {
         method: "POST",
@@ -50,7 +75,8 @@ export default {
       });
 
       if (!response.ok) {
-        console.log("something went wrong", response);
+        const error = await response.json();
+        this.errorMsg = error.message;
         return;
       }
 
@@ -106,13 +132,10 @@ h1 span {
 
 #picture::file-selector-button {
   background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(53, 219, 109) 0%,
-    rgba(183, 251, 169, 1) 100%
-  );
-  border: none;
-  border-radius: 5px;
+  border: solid 2px black;
+  border-top: none;
+  border-right: none;
+  border-radius: 3px;
   font-family: "Pridi", serif;
 }
 
@@ -142,5 +165,14 @@ h1 span {
 
 .hidden {
   display: none;
+}
+
+.error-msg {
+  font-family: "Pridi", serif;
+  font-size: 1.2rem;
+}
+
+.error {
+  border: solid 2px red;
 }
 </style>

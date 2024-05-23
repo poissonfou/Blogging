@@ -11,12 +11,16 @@ module.exports = {
   login: async ({ email, password }) => {
     let errorMessage;
 
-    if (!validator.isEmail(email)) {
+    if (!validator.isEmail(email.trim())) {
       errorMessage = "Invalid email.";
     }
 
-    if (validator.isEmpty(password) || password.length < 5) {
-      errorMessage = "Invalid password.";
+    if (validator.isEmpty(password.trim())) {
+      errorMessage = "Please enter a password.";
+    }
+
+    if (password.trim().length <= 5) {
+      errorMessage = "Password must be at least 6 digits.";
     }
 
     if (errorMessage) {
@@ -27,22 +31,25 @@ module.exports = {
 
     const user = await User.findAll({
       where: {
-        email: email,
+        email: email.trim(),
       },
     });
 
-    if (!user) {
+    if (!user.length) {
       const error = new Error(
-        "An user with this email doesn't exist. Please signup."
+        "A user with this email doesn't exist. Please signup."
       );
       error.status = 422;
       throw error;
     }
 
-    const isEqual = await bcrypt.compare(password, user[0].dataValues.password);
+    const isEqual = await bcrypt.compare(
+      password.trim(),
+      user[0].dataValues.password
+    );
 
     if (!isEqual) {
-      const error = new Error("Password is incorrect");
+      const error = new Error("Incorrect password.");
       error.code = 401;
       throw error;
     }
@@ -58,26 +65,26 @@ module.exports = {
 
     return { token, id: user[0].dataValues.id };
   },
-  signup: async ({ signupInput }, req) => {
+  signup: async ({ signupInput }) => {
     let errorMessage;
 
-    if (!validator.isEmail(signupInput.email)) {
+    if (!validator.isEmail(signupInput.email.trim())) {
       errorMessage = "Invalid email.";
     }
 
     if (
-      validator.isEmpty(signupInput.password) ||
-      signupInput.password.length < 5
+      validator.isEmpty(signupInput.password.trim()) ||
+      signupInput.password.length <= 5
     ) {
-      errorMessage = "Password should be at least 6 digits";
+      errorMessage = "Password should be at least 6 digits.";
     }
 
-    if (signupInput.password !== signupInput.confirm) {
-      errorMessage = "Password have to be equal.";
+    if (signupInput.password.trim() !== signupInput.confirm.trim()) {
+      errorMessage = "Password must be equal.";
     }
 
     if (validator.isEmpty(signupInput.name)) {
-      errorMessage = "Please enter your name";
+      errorMessage = "Please enter your name.";
     }
 
     if (errorMessage) {
@@ -88,21 +95,21 @@ module.exports = {
 
     const user = await User.findAll({
       where: {
-        email: signupInput.email,
+        email: signupInput.email.trim(),
       },
     });
 
     if (user.length) {
-      const error = new Error("An user with this email already exists.");
+      const error = new Error("A user with this email already exists.");
       error.status = 422;
       throw error;
     }
 
-    const password = await bcrypt.hash(signupInput.password, 12);
+    const password = await bcrypt.hash(signupInput.password.trim(), 12);
 
     const newUser = await User.create({
       name: signupInput.name,
-      email: signupInput.email,
+      email: signupInput.email.trim(),
       password: password,
       followers: JSON.stringify([]),
       following: JSON.stringify([]),
@@ -126,11 +133,35 @@ module.exports = {
     return { token, id: newUser.id };
   },
   update: async ({ name, password, confirm, id }) => {
-    const nameVal = name.trim();
+    const nameVal = name;
     const passwordVal = password.trim();
     const confirmVal = confirm.trim();
 
-    if (!nameVal.length && !passwordVal.length) return;
+    if (!nameVal.length && !passwordVal.length) {
+      const error = new Error("You must provide at least one value.");
+      error.status = 422;
+      throw error;
+    }
+
+    if (passwordVal.length) {
+      if (passwordVal !== confirmVal) {
+        const error = new Error("Passwords must match.");
+        error.status = 422;
+        throw error;
+      }
+
+      if (passwordVal.length < 6) {
+        const error = new Error("Password needs to be at least six digits.");
+        error.status = 422;
+        throw error;
+      }
+    }
+
+    if (validator.isEmpty(nameVal)) {
+      const error = new Error("Please enter your name.");
+      error.status = 422;
+      throw error;
+    }
 
     const user = await User.findByPk(id);
 
@@ -145,17 +176,6 @@ module.exports = {
     }
 
     if (passwordVal.length) {
-      if (passwordVal.length < 6) {
-        const error = new Error("Password needs to be at least six digits.");
-        error.status = 422;
-        throw error;
-      }
-
-      if (passwordVal !== confirmVal) {
-        const error = new Error("Passwords don't match.");
-        error.status = 422;
-        throw error;
-      }
       const newPassword = await bcrypt.hash(passwordVal, 12);
       user.password = newPassword;
     }
@@ -166,7 +186,7 @@ module.exports = {
   },
   getUser: async ({ id }) => {
     if (id < 0 || typeof id !== "number") {
-      const error = new Error("Invalid parameter provided.");
+      const error = new Error("Invalid id.");
       error.status = 500;
       throw error;
     }
@@ -174,12 +194,18 @@ module.exports = {
     const user = await User.findByPk(id);
 
     if (!user) {
-      const error = new Error("No user found.");
+      const error = new Error("User not found.");
       error.status = 500;
       throw error;
     }
 
     const posts = await user.getPosts();
+
+    if (!posts) {
+      const error = new Error("Failed to retrieve posts. Please reload.");
+      error.status = 500;
+      throw error;
+    }
 
     for (let i = 0; i < posts.length; i++) {
       let p = posts[i].dataValues;
@@ -287,26 +313,42 @@ module.exports = {
     const images = postInput.images;
     const id = postInput.userId;
 
-    if (!title.length) {
-      console.log("Please add a title.");
-      return;
+    if (
+      !title.length ||
+      validator.isEmpty(title, { ignore_whitespace: true })
+    ) {
+      const error = new Error("Please add a title.");
+      error.status = 422;
+      throw error;
     }
 
-    if (!body.length) {
-      console.log("Please add content to your post.");
-      return;
+    if (
+      !abstract.length ||
+      validator.isEmpty(abstract, { ignore_whitespace: true })
+    ) {
+      const error = new Error("Please add an abstract to your post.");
+      error.status = 422;
+      throw error;
+    }
+
+    if (!body.length || validator.isEmpty(body, { ignore_whitespace: true })) {
+      const error = new Error("Please add content to your post.");
+      error.status = 422;
+      throw error;
     }
 
     if (!tags.length) {
-      console.log("Please add at least one tag.");
-      return;
+      const error = new Error("Please add at least one tag.");
+      error.status = 422;
+      throw error;
     }
 
     const user = await User.findByPk(id);
 
     if (!user) {
-      console.log("Error fetching user.");
-      return;
+      const error = new Error("Could not save your post. Please try again.");
+      error.status = 422;
+      throw error;
     }
 
     const post = await user.createPost({
@@ -318,7 +360,9 @@ module.exports = {
     });
 
     if (!post) {
-      throw new Error("Coulnd't save post.");
+      const error = new Error("Could not save your post. Please try again.");
+      error.status = 422;
+      throw error;
     }
 
     io.getIO().emit("post", {
@@ -354,26 +398,50 @@ module.exports = {
     const images = postInput.images;
     const postId = postInput.postId;
 
-    if (!title.length) {
-      console.log("Please add a title.");
-      return;
+    if (!postId || typeof +postId !== "number") {
+      const error = new Error(
+        "Could not get post id. Please reload and try again."
+      );
+      error.status = 422;
+      throw error;
     }
 
-    if (!body.length) {
-      console.log("Please add content to your post.");
-      return;
+    if (
+      !title.length ||
+      validator.isEmpty(title, { ignore_whitespace: true })
+    ) {
+      const error = new Error("Please add a title.");
+      error.status = 422;
+      throw error;
+    }
+
+    if (
+      !abstract.length ||
+      validator.isEmpty(abstract, { ignore_whitespace: true })
+    ) {
+      const error = new Error("Please add an abstract to your post.");
+      error.status = 422;
+      throw error;
+    }
+
+    if (!body.length || validator.isEmpty(body, { ignore_whitespace: true })) {
+      const error = new Error("Please add content to your post.");
+      error.status = 422;
+      throw error;
     }
 
     if (!tags.length) {
-      console.log("Please add at least one tag.");
-      return;
+      const error = new Error("Please add at least one tag.");
+      error.status = 422;
+      throw error;
     }
 
     const post = await Post.findByPk(postId);
 
     if (!post) {
-      console.log("Unable to fetch post. Please try again.");
-      return;
+      const error = new Error("Unable to fetch post. Please try again.");
+      error.status = 500;
+      throw error;
     }
 
     post.title = title;

@@ -5,7 +5,7 @@
       <div>
         <h1>Write and share your vision with the world.</h1>
         <p>
-          Blogging offer unique way of expressing yourself online. Follow
+          Blogging offers a unique way of expressing yourself online. Follow
           writers that inspire you and create your own community of like-minded
           users.
         </p>
@@ -72,8 +72,8 @@
     <section class="ai">
       <h1>Get more done with AI.</h1>
       <p>
-        Write better and faster with the help of our AI. Ask questions or give
-        it a writing prompt for a paragraph. His name is Philipe Manor The
+        Write better and faster with the help of our AI. Ask it questions or
+        give it a writing prompt for a paragraph. His name is Philipe Manor The
         Third, but you can call him Phil.😉
       </p>
       <span
@@ -84,23 +84,48 @@
 
     <section class="signup">
       <h1>Get started now.</h1>
+      <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
       <div class="signup-content">
         <the-form @submit="signup">
           <div class="input-box">
             <label for="name">Name</label>
-            <input type="text" name="name" />
+            <input
+              type="text"
+              name="name"
+              v-model="name"
+              @blur="validate('name')"
+              :class="errorMsg.field == 'name' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="email">Email</label>
-            <input type="text" name="email" />
+            <input
+              type="text"
+              name="email"
+              v-model.trim="email"
+              @blur="validate('email')"
+              :class="errorMsg.field == 'email' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="password">Password</label>
-            <input type="password" name="password" />
+            <input
+              type="password"
+              name="password"
+              v-model.trim="password"
+              @blur="validate('password')"
+              :class="errorMsg.field == 'password' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="confirm">Confirm your password</label>
-            <input type="password" name="confirm" />
+            <input
+              type="password"
+              name="confirm"
+              v-model.trim="confirm"
+              @blur="validate('confirm')"
+              :class="errorMsg.field == 'confirm' ? 'error' : ''"
+            />
           </div>
           <span
             >Already have an account?<router-link to="/auth?mode=login"
@@ -137,6 +162,7 @@ export default {
   },
   data() {
     return {
+      errorMsg: { field: "", msg: null },
       displayedIndex: 0,
       selectedTopic: "science",
       articles: {
@@ -261,6 +287,10 @@ export default {
           },
         ],
       },
+      name: "",
+      email: "",
+      password: "",
+      confirm: "",
     };
   },
   methods: {
@@ -276,12 +306,103 @@ export default {
         this.displayedIndex++;
       }
     },
+    validate(field) {
+      if (field == "name") {
+        if (!this.name.length) {
+          this.errorMsg = { field, msg: "Please enter your name." };
+          return;
+        }
+      }
+
+      if (field == "email") {
+        if (!this.email.length || !this.email.includes("@")) {
+          this.errorMsg = { field, msg: "Please enter a valid email." };
+          return;
+        }
+      }
+
+      if (field == "password") {
+        if (!this.password.length) {
+          this.errorMsg = { field, msg: "Please enter a password." };
+          return;
+        }
+
+        if (this.password.length <= 5) {
+          this.errorMsg = {
+            field,
+            msg: "Password must be longer than five digits.",
+          };
+          return;
+        }
+
+        if (this.confirm.length) {
+          if (this.password !== this.confirm) {
+            this.errorMsg = {
+              field,
+              msg: "Password must be longer than five digits.",
+            };
+            return;
+          }
+        }
+      }
+
+      if (field == "confirm") {
+        if (!this.confirm.length) {
+          this.errorMsg = { field, msg: "Please confirm your password." };
+          return;
+        }
+
+        if (this.confirm.length <= 5) {
+          this.errorMsg = {
+            field,
+            msg: "Password must be longer than five digits.",
+          };
+          return;
+        }
+
+        if (this.password !== this.confirm) {
+          this.errorMsg = {
+            field,
+            msg: "Passwords must match.",
+          };
+          return;
+        }
+      }
+
+      if (this.errorMsg.msg) this.errorMsg = { field: "", msg: null };
+    },
     async signup(event) {
+      event.preventDefault();
       const form = new FormData(event.target);
-      const email = form.get("email");
-      const password = form.get("password");
+      const email = form.get("email").trim();
+      const password = form.get("password").trim();
       const name = form.get("name");
-      const confirm = form.get("confirm");
+      const confirm = form.get("confirm").trim();
+
+      this.errorMsg = { field: "", msg: null };
+
+      if (!name.length) {
+        this.errorMsg = { field: "name", msg: "Please enter your name." };
+        return;
+      }
+
+      if (!email.length || !email.includes("@")) {
+        this.errorMsg = { field: "email", msg: "Please enter a valid email." };
+        return;
+      }
+
+      if (!password.length <= 5) {
+        this.errorMsg = {
+          field: "password",
+          msg: "Password needs to be longer than five digits.",
+        };
+        return;
+      }
+
+      if (password !== confirm) {
+        this.errorMsg = { field: "password", msg: "Passwords must match." };
+        return;
+      }
 
       const QUERY = {
         query: `
@@ -294,18 +415,32 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.errorMsg = {
+          field: "",
+          msg: "Failed to contact server. Please try again.",
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+        this.errorMsg = {
+          field: "",
+          msg: responseData.errors[0].message,
+        };
+        return;
       }
 
       localStorage.setItem(
@@ -313,7 +448,7 @@ export default {
         JSON.stringify({ ...responseData.data.signup })
       );
 
-      this.$router.push({ path: "/dashboard" });
+      this.$router.push({ path: "/welcome" });
     },
   },
   mounted() {
@@ -502,5 +637,14 @@ ul li:hover {
   font-size: 1.8rem;
   color: rgb(53, 219, 109);
   margin-right: 0.5em;
+}
+
+.error-msg {
+  font-family: "Pridi", serif;
+  font-size: 1.2rem;
+}
+
+.error {
+  border: solid 2px red;
 }
 </style>

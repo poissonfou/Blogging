@@ -1,51 +1,97 @@
 <template>
   <div>
     <div v-if="route == 'login'" class="auth-body">
-      <h1>Login</h1>
+      <div class="header">
+        <h1>Login</h1>
+        <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
+      </div>
       <div class="input-container">
         <img src="/images/login.png" alt="" />
         <!-- <a href="https://storyset.com/work">Work illustrations by Storyset</a> -->
         <the-form @submit="login">
           <div>
             <label for="email">Email</label>
-            <input type="text" name="email" />
+            <input
+              type="text"
+              name="email"
+              v-model.trim="email"
+              @blur="validate('email')"
+              :class="errorMsg.field == 'email' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="password">Password</label>
-            <input type="password" name="password" />
+            <input
+              type="password"
+              name="password"
+              v-model.trim="password"
+              @blur="validate('password')"
+              :class="errorMsg.field == 'password' ? 'error' : ''"
+            />
           </div>
           <button>Login</button>
         </the-form>
       </div>
     </div>
     <div v-else-if="route == 'signup'" class="auth-body signup">
-      <h1>Signup</h1>
+      <div class="header">
+        <h1>Signup</h1>
+        <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
+      </div>
+
       <div class="input-container">
         <img src="/images/signup_auth.png" alt="signup illustration" />
         <!-- <a href="https://storyset.com/people">People illustrations by Storyset</a> -->
         <the-form @submit="signup">
           <div class="input-box">
             <label for="name">Name</label>
-            <input type="text" name="name" />
+            <input
+              type="text"
+              name="name"
+              v-model="name"
+              @blur="validate('name')"
+              :class="errorMsg.field == 'name' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="email">Email</label>
-            <input type="text" name="email" />
+            <input
+              type="text"
+              name="email"
+              v-model.trim="email"
+              @blur="validate('email')"
+              :class="errorMsg.field == 'email' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="password">Password</label>
-            <input type="password" name="password" />
+            <input
+              type="password"
+              name="password"
+              v-model.trim="password"
+              @blur="validate('password')"
+              :class="errorMsg.field == 'password' ? 'error' : ''"
+            />
           </div>
           <div>
             <label for="confirm">Confirm your password</label>
-            <input type="password" name="confirm" />
+            <input
+              type="password"
+              name="confirm"
+              v-model.trim="confirm"
+              @blur="validate('confirm')"
+              :class="errorMsg.field == 'confirm' ? 'error' : ''"
+            />
           </div>
           <button>Signup</button>
         </the-form>
       </div>
     </div>
     <div v-else class="auth-body">
-      <h1>Update</h1>
+      <div class="header">
+        <h1>Update</h1>
+        <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
+      </div>
       <div class="input-container update">
         <img src="/images/update.png" alt="update illustration" />
         <!-- <a href="https://storyset.com/work">Work illustrations by Storyset</a> -->
@@ -77,12 +123,110 @@ export default {
   components: {
     TheForm,
   },
+  data() {
+    return {
+      name: "",
+      email: "",
+      password: "",
+      confirm: "",
+      errorMsg: { field: "", msg: null },
+    };
+  },
   methods: {
+    validate(field) {
+      if (field == "name") {
+        if (!this.name.length) {
+          this.errorMsg = { field, msg: "Please enter your name." };
+          return;
+        }
+      }
+
+      if (field == "email") {
+        if (!this.email.length || !this.email.includes("@")) {
+          this.errorMsg = { field, msg: "Please enter a valid email." };
+          return;
+        }
+      }
+
+      if (field == "password") {
+        if (!this.password.length) {
+          this.errorMsg = { field, msg: "Please enter a password." };
+          return;
+        }
+
+        if (this.password.length <= 5) {
+          this.errorMsg = {
+            field,
+            msg: "Password must be longer than five digits.",
+          };
+          return;
+        }
+
+        if (this.confirm.length) {
+          if (this.password !== this.confirm) {
+            this.errorMsg = {
+              field,
+              msg: "Password must be longer than five digits.",
+            };
+            return;
+          }
+        }
+      }
+
+      if (field == "confirm") {
+        if (!this.confirm.length) {
+          this.errorMsg = { field, msg: "Please confirm your password." };
+          return;
+        }
+
+        if (this.confirm.length <= 5) {
+          this.errorMsg = {
+            field,
+            msg: "Password must be longer than five digits.",
+          };
+          return;
+        }
+
+        if (this.password !== this.confirm) {
+          this.errorMsg = {
+            field,
+            msg: "Passwords must match.",
+          };
+          return;
+        }
+      }
+
+      if (this.errorMsg.msg) this.errorMsg = { field: "", msg: null };
+    },
     async login(event) {
       event.preventDefault();
       const form = new FormData(event.target);
-      const email = form.get("email");
-      const password = form.get("password");
+      const email = form.get("email").trim();
+      const password = form.get("password").trim();
+
+      if (!password.length) {
+        this.errorMsg = {
+          field: "password",
+          msg: "Please enter your password",
+        };
+        return;
+      }
+
+      if (!email.length) {
+        this.errorMsg = {
+          field: "email",
+          msg: "Please enter your email",
+        };
+        return;
+      }
+
+      if (!email.includes("@")) {
+        this.errorMsg = {
+          field: "email",
+          msg: "Please enter a valid email",
+        };
+        return;
+      }
 
       const QUERY = {
         query: `
@@ -95,18 +239,32 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.errorMsg = {
+          field: "",
+          msg: "Failed to contact server. Please try again.",
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+        this.errorMsg = {
+          field: "",
+          msg: responseData.errors[0].message,
+        };
+        return;
       }
 
       localStorage.setItem(
@@ -119,10 +277,36 @@ export default {
     async signup(event) {
       event.preventDefault();
       const form = new FormData(event.target);
-      const email = form.get("email");
-      const password = form.get("password");
+      const email = form.get("email").trim();
+      const password = form.get("password").trim();
       const name = form.get("name");
-      const confirm = form.get("confirm");
+      const checkIfEmpty = name.trim();
+      const confirm = form.get("confirm").trim();
+
+      this.errorMsg = { field: "", msg: null };
+
+      if (!name.length || !checkIfEmpty.length) {
+        this.errorMsg = { field: "name", msg: "Please enter your name." };
+        return;
+      }
+
+      if (!email.length || !email.includes("@")) {
+        this.errorMsg = { field: "email", msg: "Please enter a valid email." };
+        return;
+      }
+
+      if (!password.length <= 5) {
+        this.errorMsg = {
+          field: "password",
+          msg: "Password needs to be longer than five digits.",
+        };
+        return;
+      }
+
+      if (password !== confirm) {
+        this.errorMsg = { field: "password", msg: "Passwords must match." };
+        return;
+      }
 
       const QUERY = {
         query: `
@@ -135,18 +319,29 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.errorMsg = {
+          field: "",
+          msg: "Failed to contact server. Please try again.",
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+        this.errorMsg = { field: "", msg: responseData.errors[0].message };
+        return;
       }
 
       localStorage.setItem(
@@ -161,25 +356,49 @@ export default {
       const form = new FormData(event.target);
       const password = form.get("password").trim();
       const confirm = form.get("confirm").trim();
-      const name = form.get("name").trim();
+      const name = form.get("name");
+      const checkIfEmpty = name.trim();
       const id = JSON.parse(localStorage.getItem("user")).id;
 
-      if (!name.length && !password.length) return;
+      if (name.length && !checkIfEmpty.length) {
+        this.errorMsg = {
+          field: "",
+          msg: "Please provide a valid name.",
+        };
+        return;
+      }
+
+      if (!name.length && !password.length) {
+        this.errorMsg = {
+          field: "",
+          msg: "You must provide at least one update value.",
+        };
+        return;
+      }
 
       if (password.length) {
         if (password !== confirm) {
-          console.log("Passwords don't match");
+          this.errorMsg = {
+            field: "password",
+            msg: "Passwords must match.",
+          };
           return;
         }
 
         if (password.length < 6) {
-          console.log("Passwords needs to be at least six digits.");
+          this.errorMsg = {
+            field: "password",
+            msg: "Password needs to be at least six digits.",
+          };
           return;
         }
       }
 
       if (!id) {
-        console.log("Invalid id. Please login again.");
+        this.errorMsg = {
+          field: "",
+          msg: "Invalid id. Please login again.",
+        };
         return;
       }
 
@@ -193,18 +412,31 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.errorMsg = {
+          field: "",
+          msg: "Failed to contact server. Please try again.",
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        console.log(responseData.errors);
+        this.errorMsg = {
+          field: "",
+          msg: responseData.errors[0].message,
+        };
         return;
       }
 
@@ -254,11 +486,27 @@ export default {
   align-items: center;
 }
 
+.header {
+  display: flex;
+  align-items: center;
+}
+
 .signup {
   padding-bottom: 2em;
 }
 
 .update span {
   font-size: 0.8em;
+}
+
+.error-msg {
+  font-family: "Pridi", serif;
+  font-size: 1.2rem;
+  margin-left: 0.5em;
+  margin-top: 1em;
+}
+
+.error {
+  border: solid 2px red;
 }
 </style>

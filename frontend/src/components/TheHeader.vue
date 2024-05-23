@@ -14,8 +14,8 @@
         <label for="query"></label>
         <input type="text" name="query" placeholder="search" />
       </form>
-      <nav>
-        <router-link to="/" @click="logout"> Logout </router-link>
+      <nav class="logout">
+        <span @click="logout"> Logout </span>
       </nav>
     </div>
   </header>
@@ -23,15 +23,10 @@
 
 <script>
 export default {
+  props: ["user", "logout"],
   computed: {
     route() {
       return this.$route.path;
-    },
-    user() {
-      return localStorage.getItem("user") &&
-        localStorage.getItem("user") !== "null"
-        ? JSON.parse(localStorage.getItem("user")).id
-        : null;
     },
   },
   methods: {
@@ -41,9 +36,6 @@ export default {
       const searchQuery = form.get("query");
 
       this.$router.push("/search?q=" + searchQuery.replaceAll(" ", "+"));
-    },
-    logout() {
-      localStorage.setItem("user", null);
     },
   },
 };
@@ -90,5 +82,16 @@ input {
   border-radius: 5px;
   width: 10em;
   font-family: "Zilla Slab", serif;
+}
+
+.logout span {
+  font-family: "Zilla Slab", serif;
+  margin-left: 1em;
+  font-size: 1.5rem;
+  color: white;
+}
+
+.logout span:hover {
+  cursor: pointer;
 }
 </style>

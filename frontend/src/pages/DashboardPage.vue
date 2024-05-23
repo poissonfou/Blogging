@@ -1,5 +1,6 @@
 <template>
   <div id="wrapper-board">
+    <the-popup :content="popupMessage" :confirmDelete="deletePost"></the-popup>
     <main class="main-container" id="grid">
       <section class="content" id="content">
         <div class="content-inner-container">
@@ -17,50 +18,36 @@
               <span>{{ `Articles: ` + this.user.posts.length }}</span>
             </div>
           </div>
-
-          <div v-if="tab == 'display-post'" class="user-post-actions">
-            <button @click="changeTab('edit-post')">Edit</button>
-            <button @click="deletePost">Delete</button>
+          <div v-if="tab == 'feed'">
+            <h1>WEE</h1>
           </div>
           <div v-if="tab == 'posts'" class="posts">
-            <div
+            <the-post-miniature
               v-for="[index, post] in user.posts.entries()"
               :key="index"
-              class="post-miniature"
+              :post="post"
+              :edit="showEdit"
+              :deletion="showDelete"
               @click="showPost(post.id)"
             >
-              <h2>{{ post.title }}</h2>
-              <p>{{ post.abstract }}</p>
-              <div>
-                <span
-                  v-for="[index, tag] in post.tags.entries()"
-                  :key="index"
-                  class="tag"
-                  >{{ tag }}</span
-                >
-              </div>
-            </div>
+            </the-post-miniature>
           </div>
           <div v-if="tab == 'filtered-posts'" class="posts">
-            <div
+            <the-post-miniature
               v-for="[index, post] in filteredPosts.entries()"
               :key="index"
-              class="post-miniature"
+              :post="post"
+              :edit="showEdit"
+              :deletion="deletePost"
+              @click="showPost(post.id)"
             >
-              <h2>{{ post.title }}</h2>
-              <p>{{ post.abstract }}</p>
-              <div>
-                <span
-                  v-for="[index, tag] in post.tags.entries()"
-                  :key="index"
-                  class="tag"
-                  >{{ tag }}</span
-                >
-              </div>
-            </div>
+            </the-post-miniature>
           </div>
           <div v-if="tab == 'add-post'">
-            <the-new-post :submitFunction="addPost"></the-new-post>
+            <the-new-post
+              :submitFunction="addPost"
+              :error="errorForm"
+            ></the-new-post>
           </div>
           <div v-if="tab == 'edit-post'">
             <the-new-post
@@ -70,6 +57,7 @@
               :bodyProp="selectedPost.body"
               :tagsProps="selectedPost.tags"
               :idProp="selectedPost.id"
+              :error="errorForm"
             ></the-new-post>
           </div>
         </div>
@@ -177,15 +165,17 @@
             {{ tag }}
           </span>
         </div>
-        <div v-if="tab == 'add-post'" class="ai-section">
+        <div v-if="tab == 'add-post' || tab == 'edit-post'" class="ai-section">
           <div class="ai-box">
             <div class="ai-name">
+              <span class="material-symbols-outlined"> robot_2 </span>
               <h1>Phil</h1>
               <span>
                 <i class="bi bi-google"></i>
                 Gemini
               </span>
             </div>
+            <span v-if="errorAi">{{ errorAi }}</span>
             <div
               id="ai-textbox"
               tabindex="1"
@@ -216,18 +206,30 @@
 import TheNewPost from "../components/TheNewPost.vue";
 import UserInfo from "../components/UserInfo.vue";
 import TheNotification from "../components/TheNotification.vue";
+import ThePostMiniature from "../components/ThePostMiniature.vue";
+import ThePopup from "../components/ThePopup.vue";
 
 import openSocket from "socket.io-client";
 
 export default {
+  components: {
+    TheNewPost,
+    UserInfo,
+    TheNotification,
+    ThePostMiniature,
+    ThePopup,
+  },
   data() {
     return {
       filteredPosts: [],
       tagsUserArticles: [],
-      tab: "add-post",
+      tab: "posts",
       selectedPost: null,
       notifications: [],
       displayConnections: null,
+      popupMessage: { type: "", msg: "", data: null },
+      errorAi: null,
+      errorForm: { field: "", msg: null },
     };
   },
   watch: {
@@ -254,14 +256,14 @@ export default {
       return this.$store.state.user.following;
     },
   },
-  components: {
-    TheNewPost,
-    UserInfo,
-    TheNotification,
-  },
   methods: {
     async fetchUser() {
       const id = JSON.parse(localStorage.getItem("user")).id;
+
+      if (typeof id !== "number") {
+        this.error = "Invalid id, please login again.";
+        return;
+      }
 
       const QUERY = {
         query: `
@@ -288,19 +290,35 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Couldn't connect to server. Please reload",
+          data: null,
+        };
+        return;
+      }
 
       const data = await response.json();
       const user = data.data.getUser;
 
       if (user.errors) {
-        throw new Error(user.errors[0].message);
+        this.popupMessage = {
+          type: "error",
+          msg: user.errors[0].message,
+          data: null,
+        };
+        return;
       }
 
       console.log(user);
@@ -311,10 +329,10 @@ export default {
       for (let i = 0; i < posts.length; i++) {
         let tagsPost = posts[i].tags;
 
-        for (let j = 0; j < tagsPost.length; j++) {
-          if (!tags.includes(tagsPost[j])) tags.push(tagsPost[j]);
-        }
+        tags.push(...tagsPost);
       }
+
+      const filteredTags = new Set(tags);
 
       for (let i = 0; i < user.followers.length; i++) {
         user.followers[i] = JSON.parse(user.followers[i]);
@@ -324,7 +342,7 @@ export default {
         user.following[j] = JSON.parse(user.following[j]);
       }
 
-      this.tagsUserArticles = tags;
+      this.tagsUserArticles = [...filteredTags];
       this.$store.commit("setUser", user);
     },
     changeTab(tab) {
@@ -337,24 +355,57 @@ export default {
       const abstract = form.get("abstract");
       const body = document.getElementById("body").innerHTML;
       const id = JSON.parse(localStorage.getItem("user")).id;
-      const tags = [...document.querySelectorAll(".selected-tag")];
-      const tagsContent = [];
-      for (let i = 0; i < tags.length; i++) {
-        tagsContent.push(tags[0].innerText);
-      }
+      const tags = [...document.querySelectorAll(".selected-tag")].map(
+        (tag) => tag.innerText
+      );
 
-      if (!title.length) {
-        console.log("Please add a title.");
+      if (!title.length || !title.replace(/\s/g, "").length) {
+        this.errorForm = { field: "title", msg: "Please add a title." };
+        setTimeout(() => {
+          document
+            .getElementById("title-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+
         return;
       }
 
-      if (!body.length) {
-        console.log("Please add content to your post.");
+      if (!abstract.length || !abstract.replace(/\s/g, "").length) {
+        this.errorForm = {
+          field: "abstract",
+          msg: "Please add an abstract to your post.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("abstract-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
         return;
       }
 
-      if (!tagsContent.length) {
-        console.log("Please add at least one tag.");
+      if (!body.length || !body.replace(/\s/g, "").length) {
+        this.errorForm = {
+          field: "body",
+          msg: "Please add content to your post.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("body-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
+      }
+
+      if (!tags.length) {
+        this.errorForm = {
+          field: "title",
+          msg: "Please add at least one tag.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("tags-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
         return;
       }
 
@@ -362,7 +413,7 @@ export default {
         query: `
           mutation{
 	          addPost(postInput: {title: "${title}", abstract: "${abstract}", body: "${body}", tags: ${JSON.stringify(
-          tagsContent
+          tags
         )}, images: ${JSON.stringify([])}, userId: ${id}}){
                message
                data {
@@ -380,32 +431,49 @@ export default {
         `,
       };
 
-      console.log(body);
+      let response;
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Couldn't connect to server. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        console.log(responseData.errors);
-        throw new Error(responseData.errors[0].message);
+        this.errorForm = {
+          field: "",
+          msg: responseData.errors[0].message,
+        };
+        setTimeout(() => {
+          document
+            .getElementById("general-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
       }
 
       const post = responseData.data.addPost.data;
       this.$store.commit("addPost", post);
 
-      const tagsPost = [...this.tagsUserArticles];
-      for (let i = 0; i < post.tags.length; i++) {
-        if (!tagsPost.includes(post.tags[i])) tags.push(post.tags[i]);
-      }
+      const newUserArticlesTags = new Set([
+        ...this.tagsUserArticles,
+        ...post.tags,
+      ]);
 
-      this.tagsUserArticles = tagsPost;
+      this.tagsUserArticles = [...newUserArticlesTags];
       this.tab = "posts";
     },
     async editPost(event) {
@@ -415,25 +483,62 @@ export default {
       const abstract = form.get("abstract");
       const body = form.get("body");
       const id = event.target.id;
-      const tags = [...document.querySelectorAll(".selected-tag")];
-      const tagsContent = [];
+      const tags = [...document.querySelectorAll(".selected-tag")].map(
+        (tag) => tag.innerText
+      );
 
-      for (let i = 0; i < tags.length; i++) {
-        tagsContent.push(tags[i].innerText);
-      }
-
-      if (!title.length) {
-        console.log("Please add a title.");
+      if (!id || typeof +id !== "number") {
+        this.error = "Could not get post id. Please reload and try again.";
         return;
       }
 
-      if (!body.length) {
-        console.log("Please add content to your post.");
+      if (!title.length || !title.replace(/\s/g, "").length) {
+        this.errorForm = { field: "title", msg: "Please add a title." };
+        setTimeout(() => {
+          document
+            .getElementById("title-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+
         return;
       }
 
-      if (!tagsContent.length) {
-        console.log("Please add at least one tag.");
+      if (!abstract.length || !abstract.replace(/\s/g, "").length) {
+        this.errorForm = {
+          field: "abstract",
+          msg: "Please add an abstract to your post.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("abstract-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
+      }
+
+      if (!body.length || !body.replace(/\s/g, "").length) {
+        this.errorForm = {
+          field: "body",
+          msg: "Please add content to your post.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("body-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
+      }
+
+      if (!tags.length) {
+        this.errorForm = {
+          field: "title",
+          msg: "Please add at least one tag.",
+        };
+        setTimeout(() => {
+          document
+            .getElementById("tags-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
         return;
       }
 
@@ -442,7 +547,7 @@ export default {
         mutation{
 	          editPost(postInput: {title: "${title}", abstract: "${abstract}", body: "${body}", images: ${JSON.stringify(
           []
-        )}, tags: ${JSON.stringify(tagsContent)}, postId: ${id}}){
+        )}, tags: ${JSON.stringify(tags)}, postId: ${id}}){
              message
              data{
               title
@@ -459,35 +564,56 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Couldn't connect to server. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        console.log(responseData.errors);
-        throw new Error(responseData.errors[0].message);
+        this.errorForm = {
+          field: "",
+          msg: responseData.errors[0].message,
+        };
+        setTimeout(() => {
+          document
+            .getElementById("general-error")
+            .scrollIntoView({ behavior: "smooth" });
+        }, 100);
+        return;
       }
 
       const post = responseData.data.editPost.data;
       const oldPostIdx = this.user.posts.map((p) => p.id).indexOf(post.id);
       this.$store.commit("editPost", { idx: oldPostIdx, post });
 
-      const tagsPost = [...this.tagsUserArticles];
-      for (let i = 0; i < post.tags.length; i++) {
-        if (!tagsPost.includes(post.tags[i])) tags.push(post.tags[i]);
-      }
+      const newUserArticlesTags = new Set([
+        ...this.tagsUserArticles,
+        ...post.tags,
+      ]);
 
-      this.tagsUserArticles = tagsPost;
+      this.tagsUserArticles = newUserArticlesTags;
       this.tab = "posts";
     },
-    async deletePost() {
-      const id = this.selectedPost.id;
+    async deletePost(id) {
+      const popup = document.getElementById("popup");
+      popup.classList.add("hidden");
+      popup.classList.remove("show-popup");
 
       const QUERY = {
         query: `
@@ -499,19 +625,34 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Couldn't connect to server. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        console.log(responseData.errors);
-        throw new Error(responseData.errors[0].message);
+        this.popupMessage = {
+          type: "error",
+          msg: responseData.errors[0].message,
+          data: null,
+        };
+        return;
       }
 
       const postIdx = this.user.posts.map((post) => post.id).indexOf(id);
@@ -521,13 +662,9 @@ export default {
     },
     filterPosts(event) {
       const tag = event.target.innerText;
-      const posts = this.user.posts;
-      const postsFiltered = [];
-      for (let i = 0; i < posts.length; i++) {
-        if (posts[i].tags.includes(tag)) postsFiltered.push(posts[i]);
-      }
+      const posts = this.user.posts.filter((post) => post.tags.includes(tag));
 
-      this.filteredPosts = postsFiltered;
+      this.filteredPosts = posts;
       this.tab = "filtered-posts";
     },
     showPost(id) {
@@ -536,30 +673,6 @@ export default {
       this.$router.push(
         "/article/" + this.user.id + "/" + id + "/" + post.title
       );
-
-      // const dateCreation = new Date(+post.createdAt);
-      // const dateUpdate = new Date(+post.updatedAt);
-      // post.createdAt =
-      //   dateCreation.getUTCDay() +
-      //   "/" +
-      //   dateCreation.getUTCMonth() +
-      //   "/" +
-      //   dateCreation.getUTCFullYear();
-      // +" " + dateCreation.getHours();
-      // +"h" + dateCreation.getMinutes();
-      // +"m" + dateCreation.getSeconds();
-
-      // post.updatedAt =
-      //   dateUpdate.getUTCDay() +
-      //   "/" +
-      //   dateUpdate.getUTCMonth() +
-      //   "/" +
-      //   dateUpdate.getUTCFullYear() +
-      //   " " +
-      //   dateUpdate.getHours();
-      // +"h" + dateUpdate.getMinutes();
-      // +"m" + dateUpdate.getSeconds();
-      // this.selectedPost = post;
     },
     showConnections(tab) {
       if (this.displayConnections == tab) {
@@ -570,6 +683,19 @@ export default {
     },
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
+    },
+    showEdit(event, post) {
+      event.stopPropagation();
+      this.selectedPost = post;
+      this.tab = "edit-post";
+    },
+    showDelete(event, id) {
+      event.stopPropagation();
+      this.popupMessage = {
+        type: "delete",
+        msg: "Are you sure you want to delete this article?",
+        data: id,
+      };
     },
     async follow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -640,21 +766,35 @@ export default {
     async submitPrompt() {
       const textbox = document.getElementById("ai-textbox");
       const prompt = textbox.innerText;
+      const checkIfEmpty = prompt.trim();
 
-      if (prompt == "") return;
-
-      const response = await fetch("http://localhost:3000/ai", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ prompt }),
-      });
-
-      if (!response.ok) {
-        console.log("something went wrong", await response.json());
+      if (prompt == "" || !checkIfEmpty.length) {
+        this.errorAi = "Please provide a prompt.";
         return;
       }
+
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/ai", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({ prompt }),
+        });
+      } catch (e) {
+        this.errorAi = "Couldn't connect to server. Please try again.";
+        return;
+      }
+
+      if (!response.ok) {
+        const msg = await response.json();
+        this.errorAi = msg.message;
+        return;
+      }
+
+      if (this.errorAi) this.errorAi = null;
 
       const output = await response.json();
       textbox.innerText = output.response;
@@ -663,9 +803,16 @@ export default {
   created() {
     this.fetchUser();
 
-    const socket = openSocket("http://localhost:3000", {
-      transports: ["websocket", "polling", "flashsocket"],
-    });
+    let socket;
+
+    try {
+      socket = openSocket("http://localhost:3000", {
+        transports: ["websocket", "polling", "flashsocket"],
+      });
+    } catch (e) {
+      this.error = "Could't connect to server. Please reload";
+      return;
+    }
 
     socket.on("follow", (data) => {
       if (data.following !== this.user.tag) return;
@@ -768,85 +915,6 @@ export default {
   background: rgb(15, 15, 15);
   border-radius: 10px;
   border: solid white 3px;
-}
-
-.post-miniature {
-  border: solid 3px rgb(51, 51, 51);
-  border-radius: 5px;
-  padding: 0.5em;
-  margin-bottom: 0.5em;
-  font-family: "Zilla Slab", serif;
-}
-
-.post-miniature:hover {
-  cursor: pointer;
-}
-
-.post-miniature h2 {
-  margin: 0;
-  font-family: "Pridi", serif;
-  font-size: 2rem;
-}
-
-.post-miniature p {
-  margin: 0;
-  font-family: "Zilla Slab", serif;
-  color: gray;
-  font-size: 1.5rem;
-  margin-bottom: 0.4em;
-}
-
-.tag {
-  margin-right: 0.3em;
-  background: rgb(64, 89, 173);
-  padding: 0.5em;
-  border-radius: 8px;
-  font-size: 0.8rem;
-}
-
-.user-post-actions {
-  display: flex;
-  justify-content: end;
-}
-
-.user-post-actions button {
-  margin-right: 0.5em;
-}
-
-.user-post-actions button:hover {
-  cursor: pointer;
-}
-
-.user-post-actions button:first-child {
-  border: none;
-  border-radius: 10px;
-  padding: 0.3em 1em;
-  background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(53, 219, 109) 0%,
-    rgba(183, 251, 169, 1) 100%
-  );
-  width: fit-content;
-  font-family: "Pridi", serif;
-  font-size: 1rem;
-  margin-top: 0.5em;
-}
-
-.user-post-actions button:last-child {
-  border: none;
-  border-radius: 10px;
-  padding: 0.3em 1em;
-  background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(219, 53, 53) 0%,
-    rgb(251, 169, 169) 100%
-  );
-  width: fit-content;
-  font-family: "Pridi", serif;
-  font-size: 1rem;
-  margin-top: 0.5em;
 }
 
 .connections {
@@ -960,8 +1028,10 @@ export default {
   margin-top: 0.3em;
   background: #4059ad;
   padding: 0.5em;
+  border: solid 2px black;
   border-radius: 8px;
-  font-family: "Zilla Slab", serif;
+  box-shadow: 2px 2px 0px black;
+  font-family: "Pridi", serif;
 }
 
 .user-tags span:hover {
@@ -977,6 +1047,7 @@ export default {
   border: solid 2px black;
   padding: 0.5em;
   border-radius: 5px;
+  font-family: "Pridi", serif;
 }
 
 .ai-name {
@@ -994,9 +1065,14 @@ export default {
   font-size: 0.8rem;
 }
 
+.ai-name span:first-child {
+  font-size: 2rem;
+  margin-left: 0;
+}
+
 #ai-textbox {
   height: 12em;
-  border: solid 1px black;
+  border: solid 2px black;
   border-radius: 5px;
   margin-bottom: 0.5em;
   overflow: scroll;
@@ -1019,12 +1095,12 @@ export default {
 #ai-textbox::-webkit-scrollbar-thumb {
   background: rgb(15, 15, 15);
   border-radius: 10px;
-  border: solid rgb(53, 219, 109) 3px;
+  border: solid rgb(255, 255, 255) 3px;
 }
 
 .ai-box button {
   background-color: rgb(53, 219, 109);
-  border: solid 1px black;
+  border: solid 2px black;
   box-shadow: 2px 2px 0px black;
   font-family: "Pridi", serif;
   font-size: 1rem;

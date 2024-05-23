@@ -5,7 +5,14 @@ import mutations from "./mutations.js";
 let store = createStore({
   state() {
     return {
-      user: { name: "", picture: "", posts: [], followers: [], following: [] },
+      user: {
+        id: null,
+        name: "",
+        picture: "",
+        posts: [],
+        followers: [],
+        following: [],
+      },
     };
   },
   mutations,

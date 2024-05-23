@@ -1,6 +1,6 @@
 <template>
   <div id="wrapper">
-    <the-header></the-header>
+    <the-header :user="user" :logout="logout"></the-header>
     <main id="main">
       <router-view></router-view>
     </main>
@@ -13,6 +13,32 @@ import TheHeader from "./components/TheHeader.vue";
 export default {
   name: "App",
   components: { TheHeader },
+  data() {
+    return {
+      user: localStorage.getItem("user")
+        ? JSON.parse(localStorage.getItem("user"))
+        : null,
+    };
+  },
+  computed: {
+    route() {
+      return this.$route;
+    },
+  },
+  watch: {
+    route() {
+      if (this.$route.path == "/dashboard") {
+        this.user = JSON.parse(localStorage.getItem("user")).id;
+      }
+    },
+  },
+  methods: {
+    logout() {
+      localStorage.setItem("user", JSON.stringify(null));
+      this.user = null;
+      this.$router.push("/");
+    },
+  },
 };
 </script>
 

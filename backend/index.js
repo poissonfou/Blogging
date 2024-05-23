@@ -60,10 +60,13 @@ app.use(
 );
 
 app.post("/savetag", (req, res) => {
-  console.log(req.body, "here");
   const img = req.file;
-  const tag = req.body.userTag;
+  const tag = req.body.userTag.trim();
   const id = req.query.id;
+
+  if (!tag.length) {
+    return res.json({ message: "Please enter a user tag." }).status(422);
+  }
 
   User.findByPk(id).then((user) => {
     if (!user) {
@@ -94,8 +97,19 @@ const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 app.post("/ai", async (req, res) => {
   const prompt = req.body.prompt;
+  const checkIfEmpty = prompt.trim();
+
+  if (!prompt.length || !checkIfEmpty.length) {
+    return res.json({ message: "Please provide a prompt." }).status(422);
+  }
+
   const result = await model.generateContent(prompt);
-  const response = await result.response;
+
+  if (!result) {
+    return res.json({ message: "Couldn't generate response." }).status(500);
+  }
+
+  const response = result.response;
   const text = response.text();
 
   res.json({ response: text }).status(200);
