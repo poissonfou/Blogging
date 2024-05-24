@@ -1,23 +1,30 @@
 <template>
-  <div
-    class="notif-body"
-    :id="notification.data.id"
-    @click="notificationRedirect(notification.data.id)"
-  >
-    <div v-if="!notification.data.picture" class="no-pic">
-      {{ notification.data.name[0] }}
+  <div v-if="notification.type !== 'error'">
+    <div
+      class="notif-body"
+      :id="notification.data.id"
+      @click="notificationRedirect(notification.data.id)"
+    >
+      <div v-if="!notification.data.picture" class="no-pic">
+        {{ notification.data.name[0] }}
+      </div>
+      <div v-else class="img">
+        <img
+          :src="'http://localhost:3000/images/' + notification.data.picture"
+          alt="user picture"
+        />
+      </div>
+      <span>{{
+        notification.type == "follow"
+          ? notification.data.name + " has followed you."
+          : notification.data.name + " has a new post."
+      }}</span>
     </div>
-    <div v-else class="img">
-      <img
-        :src="'http://localhost:3000/images/' + notification.data.picture"
-        alt="user picture"
-      />
+  </div>
+  <div v-else>
+    <div class="notif-body">
+      <span>{{ notification.data }}</span>
     </div>
-    <span>{{
-      notification.type == "follow"
-        ? notification.data.name + " has followed you."
-        : notification.data.name + " has a new post."
-    }}</span>
   </div>
 </template>
 
@@ -37,9 +44,12 @@ export default {
     },
   },
   mounted() {
-    const notification = document.getElementById(
+    let notification = document.getElementById(
       this.$props.notification.data.id
     );
+    if (!notification) {
+      notification = document.getElementsByClassName("notif-body")[0];
+    }
     setTimeout(() => {
       notification.classList.add("popup");
     }, 100);
@@ -59,7 +69,7 @@ export default {
   padding: 0.2em 0.5em;
   border-radius: 5px;
   border: solid 2px black;
-  width: fit-content;
+  width: 18em;
   background-color: rgb(255, 255, 255);
   font-family: "Pridi", serif;
   font-size: 1rem;

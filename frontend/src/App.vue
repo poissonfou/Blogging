@@ -1,18 +1,30 @@
 <template>
-  <div id="wrapper">
-    <the-header :user="user" :logout="logout"></the-header>
-    <main id="main">
-      <router-view></router-view>
-    </main>
+  <div>
+    <div id="wrapper">
+      <the-header :user="user" :logout="logout"></the-header>
+      <main id="main">
+        <router-view></router-view>
+      </main>
+    </div>
+    <div class="notifications">
+      <the-notification
+        v-for="notif in notifications"
+        :key="notif.data.id"
+        :notification="notif"
+      ></the-notification>
+    </div>
   </div>
 </template>
 
 <script>
 import TheHeader from "./components/TheHeader.vue";
+import TheNotification from "./components/TheNotification.vue";
+
+import openSocket from "socket.io-client";
 
 export default {
   name: "App",
-  components: { TheHeader },
+  components: { TheHeader, TheNotification },
   data() {
     return {
       user: localStorage.getItem("user")
@@ -24,9 +36,18 @@ export default {
     route() {
       return this.$route;
     },
+    notifications() {
+      return this.$store.state.notifications;
+    },
   },
   watch: {
     route() {
+      if (this.$store.state.pendingUpdates.length) {
+        this.$store.state.pendingUpdates.forEach((update) => {
+          this.$store.commit(update.action, update.data);
+        });
+        this.$store.state.pendingUpdates = [];
+      }
       if (this.$route.path == "/dashboard") {
         this.user = JSON.parse(localStorage.getItem("user")).id;
       }
@@ -39,6 +60,45 @@ export default {
       sessionStorage.clear();
       this.$router.push("/");
     },
+  },
+  mounted() {
+    let socket;
+
+    try {
+      socket = openSocket("http://localhost:3000", {
+        transports: ["websocket", "polling", "flashsocket"],
+      });
+    } catch (e) {
+      this.error = "Couldn't connect to server. Please reload";
+      return;
+    }
+
+    socket.on("follow", (data) => {
+      if (data.following !== this.user.tag) return;
+      if (data.action == "follow") {
+        this.$store.commit("pushNotification", {
+          data: data.follower,
+          type: "follow",
+        });
+      }
+    });
+
+    socket.on("post", (data) => {
+      if (!this.$store.state.user.following.includes(String(data.user.id)))
+        return;
+      if (data.action == "post") {
+        this.$store.commit("pushNotification", {
+          data: data.user,
+          type: "post",
+        });
+      }
+    });
+
+    setInterval(() => {
+      if (this.$store.state.notifications.length) {
+        this.$store.commit("resetNotifications");
+      }
+    }, 15000);
   },
 };
 </script>
@@ -73,5 +133,17 @@ html {
 
 #main {
   height: 89.9%;
+}
+
+.notifications {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  right: 0.1em;
+  bottom: 0.1em;
+  width: fit-content;
+  overflow: hidden;
+  background-color: aqua;
 }
 </style>

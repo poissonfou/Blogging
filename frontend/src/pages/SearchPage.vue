@@ -1,5 +1,6 @@
 <template>
   <div class="page-body">
+    <the-popup :content="popupMessage"></the-popup>
     <div
       class="search-result"
       v-for="[index, result] in results.entries()"
@@ -28,23 +29,35 @@
       </div>
 
       <div v-if="user.following.map((fol) => fol.id).indexOf(result.id) !== -1">
-        <button @click="unfollow(result.id)" class="button-unfollow">
+        <button @click="unfollow($event, result.id)" class="button-unfollow">
           Unfollow
         </button>
       </div>
       <div v-else>
-        <button @click="follow(result.id)" class="button-follow">Follow</button>
+        <button @click="follow($event, result.id)" class="button-follow">
+          Follow
+        </button>
       </div>
     </div>
   </div>
 </template>
 
 <script>
+import ThePopup from "../components/ThePopup.vue";
+
 export default {
   data() {
     return {
       results: [],
+      popupMessage: {
+        type: "",
+        msg: "",
+        data: null,
+      },
     };
+  },
+  components: {
+    ThePopup,
   },
   computed: {
     user() {
@@ -52,7 +65,8 @@ export default {
     },
   },
   methods: {
-    async follow(id) {
+    async follow(event, id) {
+      event.stopPropagation();
       const userId = JSON.parse(localStorage.getItem("user")).id;
 
       const QUERY = {
@@ -68,26 +82,38 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save follow. Please try again.",
+        });
         return;
       }
 
       const data = await response.json();
 
-      console.log(data);
+      if (data.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: data.errors[0].message,
+        });
+        return;
+      }
 
       this.$store.commit("follow", data.data.follow);
     },
-    async unfollow(id) {
+    async unfollow(event, id) {
+      event.stopPropagation();
       const userId = JSON.parse(localStorage.getItem("user")).id;
 
       const QUERY = {
@@ -100,16 +126,31 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save unfollow. Please try again.",
+        });
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: data.errors[0].message,
+        });
         return;
       }
 
@@ -125,16 +166,26 @@ export default {
         query: `
         {
 	      search(query: "${searchQuery}"){
-          id,
+          id
           picture
-          name,
-          tag,
-          followers,
-          following,
+          name
+          tag
+          followers {
+              id
+              name
+              picture
+              tag
+          }
+          following {
+            id
+            name
+            picture
+            tag
+          }
           posts{
-            id,
-            title,
-            abstract,
+            id
+            title
+            abstract
             tags
             }
           }
@@ -142,20 +193,35 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong :(", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Could not complete search. Please try again.",
+          data: null,
+        };
         return;
       }
 
       const responseData = await response.json();
+
+      if (responseData.errors) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Could not complete search. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       this.results = responseData.data.search;
 
@@ -164,6 +230,9 @@ export default {
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
     },
+  },
+  mounted() {
+    this.fetchSearch();
   },
 };
 </script>

@@ -1,7 +1,6 @@
 import { createStore } from "vuex";
 import createPersistedState from "vuex-persistedstate";
 
-import getters from "./getters.js";
 import mutations from "./mutations.js";
 
 let store = createStore({
@@ -16,10 +15,11 @@ let store = createStore({
         followers: [],
         following: [],
       },
+      notifications: [],
+      pendingUpdates: [],
     };
   },
   mutations,
-  getters,
 });
 
 export default store;

@@ -107,40 +107,37 @@
           <div v-if="displayConnections == 'following'" class="following">
             <h1>Following</h1>
             <div
-              v-for="[
-                index,
-                follow,
-              ] in this.$store.state.user.following.entries()"
+              v-for="[index, foll] in user.following.entries()"
               :key="index"
               class="follow"
             >
               <div class="follow-info">
-                <div v-if="!follow.picture" class="follow-no-pic">
-                  {{ follow.name[0] }}
+                <div v-if="!foll.picture" class="follow-no-pic">
+                  {{ foll.name[0] }}
                 </div>
                 <div v-else class="follow-img">
                   <img
-                    :src="'http://localhost:3000/images/' + follow.picture"
+                    :src="'http://localhost:3000/images/' + foll.picture"
                     alt="profile-picture"
                   />
                 </div>
                 <div>
                   <div class="follow-identifiers">
-                    <h3>{{ follow.name }}</h3>
-                    <span>{{ follow.tag }}</span>
+                    <h3>{{ foll.name }}</h3>
+                    <span>{{ foll.tag }}</span>
                   </div>
                 </div>
               </div>
 
               <div
-                v-if="following.map((fol) => fol.id).indexOf(follow.id) !== -1"
+                v-if="following.map((fol) => fol.id).indexOf(foll.id) !== -1"
               >
-                <button @click="unfollow(follow.id)" class="button-unfollow">
+                <button @click="unfollow(foll.id)" class="button-unfollow">
                   Unfollow
                 </button>
               </div>
               <div v-else>
-                <button @click="follow(follow.id)" class="button-follow">
+                <button @click="follow(foll.id)" class="button-follow">
                   Follow
                 </button>
               </div>
@@ -193,13 +190,6 @@
             </div>
           </div>
         </div>
-        <div class="notifications">
-          <the-notification
-            v-for="notif in notifications"
-            :key="notif.data.id"
-            :notification="notif"
-          ></the-notification>
-        </div>
       </section>
     </main>
   </div>
@@ -208,17 +198,13 @@
 <script>
 import TheNewPost from "../components/TheNewPost.vue";
 import UserInfo from "../components/UserInfo.vue";
-import TheNotification from "../components/TheNotification.vue";
 import ThePostMiniature from "../components/ThePostMiniature.vue";
 import ThePopup from "../components/ThePopup.vue";
-
-import openSocket from "socket.io-client";
 
 export default {
   components: {
     TheNewPost,
     UserInfo,
-    TheNotification,
     ThePostMiniature,
     ThePopup,
   },
@@ -228,8 +214,8 @@ export default {
       tagsUserArticles: [],
       tab: "posts",
       selectedPost: null,
-      notifications: [],
       displayConnections: null,
+      storeUpdates: [],
       followers: [],
       following: [],
       popupMessage: { type: "", msg: "", data: null },
@@ -257,6 +243,7 @@ export default {
   },
   methods: {
     async fetchUser() {
+      console.log("running");
       const id = JSON.parse(localStorage.getItem("user")).id;
 
       if (typeof id !== "number") {
@@ -281,8 +268,18 @@ export default {
                 createdAt
                 updatedAt
               }
-              followers
-              following
+              followers {
+                id
+                name
+                picture
+                tag
+              }
+              following {
+                id
+                name
+                picture 
+                tag
+              }
               tag
              }
           }
@@ -309,41 +306,30 @@ export default {
       }
 
       const data = await response.json();
-      const user = data.data.getUser;
 
-      if (user.errors) {
+      if (data.errors) {
         this.popupMessage = {
           type: "error",
-          msg: user.errors[0].message,
+          msg: data.errors[0].message,
           data: null,
         };
         return;
       }
 
+      const user = data.data.getUser;
+
       console.log(user);
 
       const posts = user.posts;
-      const tags = [];
+      const tags = new Set([]);
 
       for (let i = 0; i < posts.length; i++) {
-        let tagsPost = posts[i].tags;
-
-        tags.push(...tagsPost);
+        tags.add(...posts[i].tags);
       }
 
-      const filteredTags = new Set(tags);
-
-      for (let i = 0; i < user.followers.length; i++) {
-        user.followers[i] = JSON.parse(user.followers[i]);
-      }
-
-      for (let j = 0; j < user.following.length; j++) {
-        user.following[j] = JSON.parse(user.following[j]);
-      }
-
-      this.tagsUserArticles = [...filteredTags];
-      this.followers = user.followers;
-      this.following = user.following;
+      this.tagsUserArticles = [...tags];
+      this.followers = JSON.parse(JSON.stringify(user.followers));
+      this.following = JSON.parse(JSON.stringify(user.following));
       this.$store.commit("setUser", user);
     },
     changeTab(tab) {
@@ -678,6 +664,9 @@ export default {
     showConnections(tab) {
       if (this.displayConnections == tab) {
         this.displayConnections = null;
+        this.storeUpdates.forEach((update) => {
+          this.$store.commit(update.action, update.data);
+        });
         return;
       }
       this.displayConnections = tab;
@@ -714,27 +703,45 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save follow. Please try again.",
+        });
         return;
       }
 
       const data = await response.json();
 
-      let idx = this.following.map((fol) => fol.id).indexOf("null_" + id);
+      if (data.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: data.errors[0].message,
+        });
+        return;
+      }
+
+      const idx = this.following.map((fol) => fol.id).indexOf(-Math.abs(id));
       if (idx !== -1) {
         this.following[idx].id = id;
-      } else {
-        this.following.push(data.data.follow);
+        return;
       }
+      this.following.push(data.data.follow);
+      this.storeUpdates.push({ action: "follow", data: data.data.follow });
+      this.$store.commit("pushPendingUpdate", {
+        action: "follow",
+        data: data.data.follow,
+      });
     },
     async unfollow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -749,28 +756,41 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save unfollow. Please try again.",
+        });
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: data.errors[0].message,
+        });
         return;
       }
 
       const idx = this.following.map((fol) => fol.id).indexOf(id);
-
-      console.log(idx);
-
-      const arr = this.following;
-      arr[idx].id = "null_" + id;
-      this.following = arr;
-
-      console.log({ ...this.following }, "nubbbhb");
+      this.following[idx].id = -Math.abs(id);
+      this.storeUpdates.push({ action: "unfollow", data: idx });
+      this.$store.commit("pushPendingUpdate", {
+        action: "unfollow",
+        data: idx,
+      });
     },
     async submitPrompt() {
       const textbox = document.getElementById("ai-textbox");
@@ -811,36 +831,6 @@ export default {
   },
   created() {
     this.fetchUser();
-
-    let socket;
-
-    try {
-      socket = openSocket("http://localhost:3000", {
-        transports: ["websocket", "polling", "flashsocket"],
-      });
-    } catch (e) {
-      this.error = "Could't connect to server. Please reload";
-      return;
-    }
-
-    socket.on("follow", (data) => {
-      if (data.following !== this.user.tag) return;
-      if (data.action == "follow") {
-        this.notifications.push({
-          data: data.follower,
-          type: "follow",
-        });
-        this.$store.commit("followed", data.follower.id);
-      }
-    });
-
-    socket.on("post", (data) => {
-      if (!this.$store.state.user.following.includes(String(data.user.id)))
-        return;
-      if (data.action == "post") {
-        this.notifications.push({ data: data.user, type: "post" });
-      }
-    });
   },
 };
 </script>
@@ -1126,16 +1116,5 @@ export default {
 
 .ai-box button:hover {
   cursor: pointer;
-}
-
-.notifications {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  right: 0.1em;
-  bottom: 0.1em;
-  width: 100%;
-  overflow: hidden;
 }
 </style>

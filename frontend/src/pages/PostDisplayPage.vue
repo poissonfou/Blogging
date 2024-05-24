@@ -1,5 +1,6 @@
 <template>
   <div class="display-body">
+    <the-popup :content="popupMessage"></the-popup>
     <div class="header">
       <h1>{{ post.title }}</h1>
       <h3>{{ post.abstract }}</h3>
@@ -37,6 +38,7 @@
       </the-form>
     </div>
     <div class="comments">
+      <h1>Comments</h1>
       <div
         v-for="[index, comment] in post.comments.entries()"
         :key="index"
@@ -89,6 +91,7 @@
 
 <script>
 import TheForm from "../components/TheForm.vue";
+import ThePopup from "../components/ThePopup.vue";
 
 export default {
   data() {
@@ -102,10 +105,16 @@ export default {
         tags: [],
         comments: [],
       },
+      popupMessage: {
+        type: "",
+        msg: "",
+        data: null,
+      },
     };
   },
   components: {
     TheForm,
+    ThePopup,
   },
   computed: {
     userId() {
@@ -144,21 +153,35 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Could not connect to server. Please reload.",
+          data: null,
+        };
+        return;
+      }
 
       const responseData = await response.json();
 
       if (responseData.errors) {
-        throw new Error(responseData.errors[0].message);
+        this.popupMessage = {
+          type: "error",
+          msg: responseData.errors[0].message,
+          data: null,
+        };
+        return;
       }
-
-      console.log(responseData.data.getPost);
 
       this.post = responseData.data.getPost;
     },
@@ -170,6 +193,16 @@ export default {
       const author = this.$store.state.user.name;
       const idAuthor = this.$store.state.user.id;
       const postId = this.$route.params.id;
+
+      if (!comment.length && !comment.replace(/\s/g, "").length) return;
+
+      if (!postId && typeof +postId !== "number") {
+        this.popupMessage = {
+          type: "error",
+          msg: "Something went wrong. Please reload.",
+          data: null,
+        };
+      }
 
       const QUERY = {
         query: `
@@ -186,24 +219,37 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Something went wrong. Please reload.",
+          data: null,
+        };
         return;
       }
 
       const responseData = await response.json();
 
-      console.log(responseData.data.comment);
+      if (!responseData.errors) {
+        this.popupMessage = {
+          type: "error",
+          msg: responseData.errors[0].message,
+          data: null,
+        };
+        return;
+      }
 
-      this.post.comments.push(responseData.data.comment);
+      this.post.comments.unshift(responseData.data.comment);
     },
     async redirectProfile(id) {
       this.$router.push("/profile/" + id);
@@ -214,6 +260,35 @@ export default {
       const idxComment = this.post.comments.map((c) => c.id).indexOf(commentId);
       const oppositeAction = type == "likes" ? "dislikes" : "likes";
       const isSelected = this.post.comments[idxComment][type].indexOf(userId);
+      const button = document.getElementById(type);
+      const oppositeButton = document.getElementById(oppositeAction);
+
+      const copyArrType = JSON.parse(
+        JSON.stringify(this.post.comments[idxComment][type])
+      );
+      const copyArrOpposite = JSON.parse(
+        JSON.stringify(this.post.comments[idxComment][oppositeAction])
+      );
+      let reserveButtonAction;
+
+      if (isSelected !== -1) {
+        const idxUser = this.post.comments[idxComment][type].indexOf(userId);
+        this.post.comments[idxComment][type].splice(idxUser, 1);
+        button.classList.remove("button-selected");
+        reserveButtonAction = "add";
+      } else {
+        const oppositeArr = this.post.comments[idxComment][oppositeAction];
+        const oppositeIdx = oppositeArr.indexOf(userId);
+
+        if (oppositeIdx !== -1) {
+          oppositeButton.classList.remove("button-selected");
+          this.post.comments[idxComment][oppositeAction].splice(oppositeIdx, 1);
+        }
+
+        this.post.comments[idxComment][type].push(userId);
+        button.classList.add("button-selected");
+        reserveButtonAction = oppositeIdx == -1 ? "remove" : "add&remove";
+      }
 
       const QUERY = {
         query: `
@@ -225,39 +300,42 @@ export default {
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
-
-      console.log(await response.json());
-
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      let response;
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        console.log("Couldn't connect to server.");
+        this.post.comments[idxComment][type] = copyArrType;
+        this.post.comments[idxComment][oppositeAction] = copyArrOpposite;
+        if (reserveButtonAction == "add") {
+          button.classList.add("button-selected");
+        } else if (reserveButtonAction == "remove") {
+          button.classList.remove("button-selected");
+        } else {
+          button.classList.remove("button-selected");
+          oppositeButton.classList.add("button-selected");
+        }
         return;
       }
 
-      const button = document.getElementById(type);
+      const responseData = await response.json();
 
-      if (isSelected !== -1) {
-        const idxUser = this.post.comments[idxComment][type].indexOf(userId);
-        this.post.comments[idxComment][type].splice(idxUser, 1);
-        button.classList.remove("button-selected");
-      } else {
-        const oppositeArr = this.post.comments[idxComment][oppositeAction];
-        const oppositeIdx = oppositeArr.indexOf(userId);
-
-        if (oppositeIdx !== -1) {
-          const oppositeButton = document.getElementById(oppositeAction);
-          oppositeButton.classList.remove("button-selected");
-          this.post.comments[idxComment][oppositeAction].splice(oppositeIdx, 1);
+      if (!responseData.errors) {
+        console.log("something went wrong", responseData.errors[0].message);
+        this.post.comments[idxComment][type] = copyArrType;
+        this.post.comments[idxComment][oppositeAction] = copyArrOpposite;
+        if (reserveButtonAction == "add") {
+          button.classList.add("button-selected");
+        } else {
+          button.classList.remove("button-selected");
         }
-
-        this.post.comments[idxComment][type].push(userId);
-        button.classList.add("button-selected");
+        return;
       }
     },
   },
@@ -278,7 +356,6 @@ export default {
   border-top-left-radius: 10px;
   margin: 0em 5em;
   margin-top: 2em;
-
   padding: 0.5em 3em;
 }
 
@@ -348,7 +425,9 @@ export default {
 .tag {
   margin-right: 0.3em;
   background: rgb(64, 89, 173);
-  padding: 0.5em 1em;
+  border: solid 2px black;
+  box-shadow: 2px 2px 0px black;
+  padding: 0.5em 0.8em;
   border-radius: 8px;
   font-size: 1rem;
   font-family: "Pridi", serif;
@@ -375,6 +454,10 @@ export default {
 
 .comments {
   padding: 1.7em;
+}
+
+.comments h1 {
+  font-family: "Pridi", serif;
 }
 
 .comment {

@@ -1,5 +1,6 @@
 <template>
   <main>
+    <the-popup :content="popupMessage"></the-popup>
     <div class="profile-body">
       <div class="info">
         <div>
@@ -50,18 +51,27 @@
 </template>
 
 <script>
+import ThePopup from "../components/ThePopup.vue";
 import ThePostMiniature from "../components/ThePostMiniature.vue";
 
 export default {
   components: {
     ThePostMiniature,
+    ThePopup,
   },
   data() {
     return {
-      user: { name: "", picture: "", posts: [], followers: [], following: [] },
-      selectedPost: null,
+      user: {
+        id: null,
+        name: "",
+        picture: "",
+        posts: [],
+        followers: [],
+        following: [],
+      },
       tagsUserArticles: [],
       filteredPosts: [],
+      popupMessage: { type: "", msg: null, data: null },
     };
   },
   computed: {
@@ -90,51 +100,66 @@ export default {
                 createdAt
                 updatedAt
               }
-              followers
-              following
+              followers {
+                id
+                name
+                picture
+                tag
+              }
+              following {
+                id
+                name
+                picture
+                tag
+              }
               tag
              }
           }
         `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Could not get profile. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       const data = await response.json();
-      const user = data.data.getUser;
 
-      if (user.errors) {
-        throw new Error(user.errors[0].message);
+      if (data.errors) {
+        this.popupMessage = {
+          type: "error",
+          msg: data.errors[0].message,
+          data: null,
+        };
+        return;
       }
+
+      const user = data.data.getUser;
 
       console.log(user);
 
       const posts = user.posts;
-      const tags = [];
+      const tags = new Set([]);
 
       for (let i = 0; i < posts.length; i++) {
-        let tagsPost = posts[i].tags;
-
-        for (let j = 0; j < tagsPost.length; j++) {
-          if (!tags.includes(tagsPost[j])) tags.push(tagsPost[j]);
-        }
+        tags.add(...posts[i].tags);
       }
 
-      for (let i = 0; i < user.followers.length; i++) {
-        user.followers[i] = JSON.parse(user.followers[i]);
-      }
-
-      for (let j = 0; j < user.following.length; j++) {
-        user.following[j] = JSON.parse(user.following[j]);
-      }
-
-      this.tagsUserArticles = tags;
+      this.tagsUserArticles = [...tags];
       this.user = user;
     },
     async follow(id) {
@@ -153,22 +178,33 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save follow. Please try again.",
+        });
         return;
       }
 
       const data = await response.json();
 
-      console.log(data);
+      if (data.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: data.errors[0].message,
+        });
+        return;
+      }
 
       this.$store.commit("follow", data.data.follow);
     },
@@ -185,20 +221,33 @@ export default {
             `,
       };
 
-      const response = await fetch("http://localhost:3000/graphql", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(QUERY),
-      });
+      let response;
 
-      if (!response.ok) {
-        console.log("something went wrong", response);
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: "Could not save unfollow. Please try again.",
+        });
         return;
       }
 
-      console.log(await response.json());
+      const responseData = await response.json();
+
+      if (responseData.errors) {
+        this.$store.commit("pushNotification", {
+          type: "error",
+          data: responseData.errors[0].message,
+        });
+        return;
+      }
 
       const idx = this.$store.state.user.following
         .map((fol) => fol.id)
@@ -207,7 +256,7 @@ export default {
     },
     async showPost(id) {
       const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
-      const post = JSON.parse(JSON.stringify(this.user.posts[postIdx]));
+      const post = this.user.posts[postIdx];
       this.$router.push(
         "/article/" + this.user.id + "/" + id + "/" + post.title
       );

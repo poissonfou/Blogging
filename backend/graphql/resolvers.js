@@ -214,13 +214,19 @@ module.exports = {
       posts[i].dataValues.images = JSON.parse(p.images);
     }
 
+    const followers = JSON.parse(user.followers);
+    const following = JSON.parse(user.following);
+
+    const parseFollowers = followers.map((fol) => JSON.parse(fol));
+    const parsedFollowing = following.map((fol) => JSON.parse(fol));
+
     return {
       id: user.id,
       name: user.name,
       picture: user.picture,
       posts: posts,
-      followers: JSON.parse(user.followers),
-      following: JSON.parse(user.following),
+      followers: parseFollowers,
+      following: parsedFollowing,
       tag: user.tag,
     };
   },
@@ -559,11 +565,20 @@ module.exports = {
     return { message: "Following added." };
   },
   comment: async ({ postId, comment, author, picture, authorId }) => {
-    console.log(postId, comment, author, picture, authorId);
+    if (!postId && typeof +postId !== "number") {
+      const error = new Error("Coulnd't find post.");
+      error.status = 422;
+      throw error;
+    }
+
+    if (!comment.length && !comment.replace(/\s/g, "").length) return;
+
     const post = await Post.findByPk(postId);
 
     if (!post) {
-      throw new Error("Coulnd't find post.");
+      const error = new Error("Coulnd't find post.");
+      error.status = 422;
+      throw error;
     }
 
     const newComment = await post.createComment({
@@ -576,10 +591,10 @@ module.exports = {
     });
 
     if (!newComment) {
-      throw new Error("Coulnd't create comment.");
+      const error = new Error("Coulnd't create comment.");
+      error.status = 422;
+      throw error;
     }
-
-    console.log(newComment);
 
     return {
       ...newComment.dataValues,
@@ -589,7 +604,9 @@ module.exports = {
     const comment = await Comment.findByPk(commentId);
 
     if (!comment) {
-      throw new Error("Coundn't find comment");
+      const error = new Error("Coundn't find comment");
+      error.status = 422;
+      throw error;
     }
 
     const oppositeAction = type == "likes" ? "dislikes" : "likes";
