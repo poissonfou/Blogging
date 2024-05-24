@@ -91,7 +91,7 @@
               </div>
 
               <div
-                v-if="followers.map((fol) => fol.id).indexOf(follow.id) !== -1"
+                v-if="following.map((fol) => fol.id).indexOf(follow.id) !== -1"
               >
                 <button @click="unfollow(follower.id)" class="button-unfollow">
                   Unfollow
@@ -107,7 +107,10 @@
           <div v-if="displayConnections == 'following'" class="following">
             <h1>Following</h1>
             <div
-              v-for="[index, follow] in following.entries()"
+              v-for="[
+                index,
+                follow,
+              ] in this.$store.state.user.following.entries()"
               :key="index"
               class="follow"
             >
@@ -227,6 +230,8 @@ export default {
       selectedPost: null,
       notifications: [],
       displayConnections: null,
+      followers: [],
+      following: [],
       popupMessage: { type: "", msg: "", data: null },
       errorAi: null,
       errorForm: { field: "", msg: null },
@@ -248,12 +253,6 @@ export default {
   computed: {
     user() {
       return this.$store.state.user;
-    },
-    followers() {
-      return this.$store.state.user.followers;
-    },
-    following() {
-      return this.$store.state.user.following;
     },
   },
   methods: {
@@ -343,6 +342,8 @@ export default {
       }
 
       this.tagsUserArticles = [...filteredTags];
+      this.followers = user.followers;
+      this.following = user.following;
       this.$store.commit("setUser", user);
     },
     changeTab(tab) {
@@ -728,9 +729,12 @@ export default {
 
       const data = await response.json();
 
-      console.log(data);
-
-      this.$store.commit("follow", data.data.follow);
+      let idx = this.following.map((fol) => fol.id).indexOf("null_" + id);
+      if (idx !== -1) {
+        this.following[idx].id = id;
+      } else {
+        this.following.push(data.data.follow);
+      }
     },
     async unfollow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -758,10 +762,15 @@ export default {
         return;
       }
 
-      const idx = this.$store.state.user.following
-        .map((fol) => fol.id)
-        .indexOf(id);
-      this.$store.commit("unfollow", idx);
+      const idx = this.following.map((fol) => fol.id).indexOf(id);
+
+      console.log(idx);
+
+      const arr = this.following;
+      arr[idx].id = "null_" + id;
+      this.following = arr;
+
+      console.log({ ...this.following }, "nubbbhb");
     },
     async submitPrompt() {
       const textbox = document.getElementById("ai-textbox");
@@ -992,6 +1001,7 @@ export default {
   border-radius: 5px;
   font-family: "Pridi", serif;
   font-size: 1rem;
+  box-shadow: 2px 2px 0px black;
 }
 
 .follow .button-follow,
@@ -1001,6 +1011,7 @@ export default {
   border-radius: 5px;
   font-family: "Pridi", serif;
   font-size: 1rem;
+  box-shadow: 2px 2px 0px black;
 }
 
 .button-follow:hover,

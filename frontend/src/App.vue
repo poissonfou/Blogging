@@ -36,6 +36,7 @@ export default {
     logout() {
       localStorage.setItem("user", JSON.stringify(null));
       this.user = null;
+      sessionStorage.clear();
       this.$router.push("/");
     },
   },

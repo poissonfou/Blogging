@@ -3,7 +3,11 @@ export default {
     state.user = payload;
   },
   follow(state, payload) {
-    state.user.following.push(payload);
+    if (payload.idx) {
+      state.user.following.splice(payload.idx, 0, payload.data);
+    } else {
+      state.user.following.push(payload.data);
+    }
   },
   unfollow(state, payload) {
     state.user.following.splice(payload, 1);

@@ -70,7 +70,9 @@ export default {
     },
   },
   methods: {
-    async fetchUser(id, isUserStore) {
+    async fetchUser() {
+      const id = this.$route.params.id;
+
       const QUERY = {
         query: `
           {
@@ -132,12 +134,8 @@ export default {
         user.following[j] = JSON.parse(user.following[j]);
       }
 
-      if (!isUserStore) {
-        this.tagsUserArticles = tags;
-        this.user = user;
-      } else {
-        this.$store.commit("setUser", user);
-      }
+      this.tagsUserArticles = tags;
+      this.user = user;
     },
     async follow(id) {
       const userId = JSON.parse(localStorage.getItem("user")).id;
@@ -215,11 +213,8 @@ export default {
       );
     },
   },
-  async mounted() {
-    const id = this.$route.params.id;
-    const userId = JSON.parse(localStorage.getItem("user")).id;
-    this.fetchUser(id, false);
-    this.fetchUser(userId, true);
+  mounted() {
+    this.fetchUser();
   },
 };
 </script>
