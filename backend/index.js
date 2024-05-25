@@ -45,7 +45,8 @@ const fileFilter = (req, file, cb) => {
   if (
     file.mimetype === "image/png" ||
     file.mimetype === "image/jpg" ||
-    file.mimetype === "image/jpeg"
+    file.mimetype === "image/jpeg" ||
+    file.mimetype === "image/avif"
   ) {
     cb(null, true);
   } else {
@@ -58,6 +59,71 @@ app.use(express.json());
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("picture")
 );
+
+app.post("/updateImage", async (req, res) => {
+  const img = req.file;
+  const id = req.query.id;
+
+  if (!img)
+    return res.status(422).json({ message: "Please choose a picture." });
+
+  if (
+    img.mimetype !== "image/png" &&
+    img.mimetype !== "image/jpg" &&
+    img.mimetype !== "image/jpeg" &&
+    img.mimetype !== "image/avif"
+  ) {
+    return res.status(422).json({
+      message:
+        "Please choose a valid file. Only png, jpg, jpeg and avif are accepted.",
+    });
+  }
+
+  const user = await User.findByPk(id);
+
+  if (!user) {
+    return res.status(422).json({ message: "Failed to fetch user" });
+  }
+
+  let pathImg = path.join(__dirname, "images", user.picture);
+
+  fs.unlink(pathImg, (err) => {
+    if (err) {
+      return res.status(422).json({ message: "Couldn't update file." });
+    }
+  });
+
+  user.picture = id + "-" + img.originalname;
+
+  await user.save();
+
+  const posts = await user.getPosts();
+
+  for (let i = 0; i < posts.length; i++) {
+    let p = posts[i].dataValues;
+
+    posts[i].dataValues.tags = JSON.parse(p.tags);
+    posts[i].dataValues.images = JSON.parse(p.images);
+  }
+
+  const followers = JSON.parse(user.followers);
+  const following = JSON.parse(user.following);
+
+  const parseFollowers = followers.map((fol) => JSON.parse(fol));
+  const parsedFollowing = following.map((fol) => JSON.parse(fol));
+
+  const newUser = {
+    id: user.id,
+    name: user.name,
+    picture: user.picture,
+    posts: posts,
+    followers: parseFollowers,
+    following: parsedFollowing,
+    tag: user.tag,
+  };
+
+  return res.status(201).json({ message: "Success", user: newUser });
+});
 
 app.post("/savetag", (req, res) => {
   const img = req.file;
@@ -86,6 +152,7 @@ app.post("/savetag", (req, res) => {
 
 app.get("/images/:name", (req, res, next) => {
   let name = req.params.name;
+  console.log(name);
   let pathImg = path.join(__dirname, "images", name);
   const file = fs.createReadStream(pathImg);
   res.setHeader("Content-Type", "image");

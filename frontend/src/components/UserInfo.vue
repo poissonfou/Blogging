@@ -1,12 +1,18 @@
 <template>
   <div class="user">
-    <div v-if="!user.picture" class="no-pic">{{ user.name[0] }}</div>
-    <div v-else class="img">
-      <img
-        :src="'http://localhost:3000/images/' + user.picture"
-        alt="user picture"
-      />
+    <div class="user-picture-box">
+      <span class="material-symbols-outlined" @click="showImageUI">
+        add_a_photo
+      </span>
+      <div v-if="!user.picture" class="no-pic">{{ user.name[0] }}</div>
+      <div v-else class="img">
+        <img
+          :src="'http://localhost:3000/images/' + user.picture"
+          alt="user picture"
+        />
+      </div>
     </div>
+
     <h3>{{ user.name }}</h3>
     <span>{{ user.tag }}</span>
     <div class="follow-info">
@@ -29,10 +35,7 @@
 
 <script>
 export default {
-  props: ["user", "changeTab", "showConnections"],
-  mounted() {
-    console.log(this.$props.user);
-  },
+  props: ["user", "changeTab", "showConnections", "showImageUI"],
 };
 </script>
 
@@ -45,6 +48,20 @@ export default {
   flex-direction: column;
   align-items: center;
   font-family: "Pridi", serif;
+}
+
+.user-picture-box span {
+  position: absolute;
+  font-size: 2.5rem;
+  left: 43%;
+  top: 7%;
+  color: white;
+  opacity: 0;
+}
+
+.user-picture-box span:hover {
+  opacity: 1;
+  cursor: pointer;
 }
 
 .user .no-pic {

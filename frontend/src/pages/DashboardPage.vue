@@ -1,6 +1,11 @@
 <template>
   <div id="wrapper-board">
     <the-popup :content="popupMessage" :confirmDelete="deletePost"></the-popup>
+    <image-picker
+      :closePopup="toggleImageSelector"
+      :updateUser="updateUser"
+      v-if="displayImageSelector"
+    ></image-picker>
     <main class="main-container" id="grid">
       <section class="content" id="content">
         <div class="content-inner-container">
@@ -150,6 +155,7 @@
           :user="user"
           :changeTab="changeTab"
           :showConnections="showConnections"
+          :showImageUI="toggleImageSelector"
         ></user-info>
         <div
           v-if="
@@ -200,6 +206,7 @@ import TheNewPost from "../components/TheNewPost.vue";
 import UserInfo from "../components/UserInfo.vue";
 import ThePostMiniature from "../components/ThePostMiniature.vue";
 import ThePopup from "../components/ThePopup.vue";
+import ImagePicker from "../components/ImagePicker.vue";
 
 export default {
   components: {
@@ -207,6 +214,7 @@ export default {
     UserInfo,
     ThePostMiniature,
     ThePopup,
+    ImagePicker,
   },
   data() {
     return {
@@ -215,6 +223,7 @@ export default {
       tab: "posts",
       selectedPost: null,
       displayConnections: null,
+      displayImageSelector: false,
       storeUpdates: [],
       followers: [],
       following: [],
@@ -331,6 +340,9 @@ export default {
       this.followers = JSON.parse(JSON.stringify(user.followers));
       this.following = JSON.parse(JSON.stringify(user.following));
       this.$store.commit("setUser", user);
+    },
+    updateUser(newUser) {
+      this.$store.commit("setUser", newUser);
     },
     changeTab(tab) {
       this.tab = tab;
@@ -670,6 +682,10 @@ export default {
         return;
       }
       this.displayConnections = tab;
+    },
+    toggleImageSelector() {
+      console.log("here");
+      this.displayImageSelector = !this.displayImageSelector;
     },
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
