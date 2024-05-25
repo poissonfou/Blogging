@@ -1,19 +1,22 @@
 <template>
-  <div class="popup-parent">
-    <div class="popup-body hidden" id="popup">
-      <div v-if="content.type == 'error'">
-        <h1>Warning</h1>
-        <p>{{ content.msg }}</p>
-        <div>
-          <button @click="close">Close</button>
+  <div>
+    <div class="backdrop hidden" id="backdrop"></div>
+    <div class="popup-parent">
+      <div class="popup-body hidden" id="popup">
+        <div v-if="content.type == 'error'">
+          <h1>Warning</h1>
+          <p>{{ content.msg }}</p>
+          <div>
+            <button @click="close">Close</button>
+          </div>
         </div>
-      </div>
-      <div v-if="content.type == 'delete'">
-        <h1>Warning</h1>
-        <p>{{ content.msg }}</p>
-        <div class="btns-type-delete">
-          <button @click="confirmDelete(content.data)">Yes</button>
-          <button @click="close">Nevermind</button>
+        <div v-if="content.type == 'delete'">
+          <h1>Warning</h1>
+          <p>{{ content.msg }}</p>
+          <div class="btns-type-delete">
+            <button @click="confirmDelete(content.data)">Yes</button>
+            <button @click="close">Nevermind</button>
+          </div>
         </div>
       </div>
     </div>
@@ -31,42 +34,55 @@ export default {
   watch: {
     contentVal() {
       const popup = document.getElementById("popup");
+      const backdrop = document.getElementById("backdrop");
       if (this.contentVal.type !== "") {
         popup.classList.remove("hidden");
         popup.classList.add("show-popup");
+        backdrop.classList.remove("hidden");
       } else {
         popup.classList.add("hidden");
         popup.classList.remove("show-popup");
+        backdrop.classList.add("hidden");
       }
     },
   },
   methods: {
     close() {
       const popup = document.getElementById("popup");
+      const backdrop = document.getElementById("backdrop");
       popup.classList.add("hidden");
       popup.classList.remove("show-popup");
+      backdrop.classList.add("hidden");
     },
   },
 };
 </script>
 
 <style scoped>
+.backdrop {
+  position: fixed;
+  height: 100%;
+  width: 100%;
+  top: 0;
+  z-index: 1000;
+  background-color: transparent;
+  backdrop-filter: blur(2px);
+}
+
 .popup-parent {
   position: absolute;
-  top: 0;
-  left: 35%;
-  height: 100%;
-  width: auto;
   display: flex;
   flex-direction: column;
   font-family: "Pridi", serif;
+  z-index: 1000;
 }
 
 .popup-body {
   display: flex;
   position: fixed;
+  top: 0;
+  left: 35%;
   padding: 0.3em;
-  z-index: 100;
   width: 18em;
   background-color: white;
   border: solid 2px black;
