@@ -1,31 +1,34 @@
 <template>
-  <div class="auth-body">
-    <h1>Welcome to <span>Blogging!</span></h1>
-    <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.error }}</span>
-    <div class="flex-container">
-      <the-form @submit="saveTagAndImage" name="form">
-        <div class="input-box">
-          <label for="userTag">User tag</label>
-          <input
-            type="text"
-            name="userTag"
-            placeholder="Create a unique user tag."
-            id="userTag"
-            v-model.trim="tag"
-            @blur="validate"
-            :class="errorMsg.field == 'userTag' ? 'error' : ''"
-          />
-        </div>
+  <div>
+    <the-popup :content="popupMessage"></the-popup>
+    <div class="auth-body">
+      <h1>Welcome to <span>Blogging!</span></h1>
+      <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.error }}</span>
+      <div class="flex-container">
+        <the-form @submit="saveTagAndImage" name="form">
+          <div class="input-box">
+            <label for="userTag">User tag</label>
+            <input
+              type="text"
+              name="userTag"
+              placeholder="Create a unique user tag."
+              id="userTag"
+              v-model.trim="tag"
+              @blur="validate"
+              :class="errorMsg.field == 'userTag' ? 'error' : ''"
+            />
+          </div>
 
-        <div class="input-box">
-          <label for="picture">Choose a profile picture</label>
-          <input type="file" name="picture" id="picture" @change="preview" />
+          <div class="input-box">
+            <label for="picture">Choose a profile picture</label>
+            <input type="file" name="picture" id="picture" @change="preview" />
+          </div>
+          <button>Done</button>
+        </the-form>
+        <div class="img-box">
+          <h2 id="no-img-msg">Choose an image</h2>
+          <img src="" id="image-preview" class="hidden" />
         </div>
-        <button>Done</button>
-      </the-form>
-      <div class="img-box">
-        <h2 id="no-img-msg">Choose an image</h2>
-        <img src="" id="image-preview" class="hidden" />
       </div>
     </div>
   </div>
@@ -33,15 +36,18 @@
 
 <script>
 import TheForm from "../components/TheForm.vue";
+import ThePopup from "../components/ThePopup.vue";
 
 export default {
   components: {
     TheForm,
+    ThePopup,
   },
   data() {
     return {
       errorMsg: { field: "", msg: null },
       tag: "",
+      popupMessage: { type: "", msg: "", data: null },
     };
   },
   methods: {
@@ -69,13 +75,32 @@ export default {
       form.append("picture", picture);
       form.append("userTag", userTag.trim());
 
-      const response = await fetch("http://localhost:3000/savetag?id=" + id, {
-        method: "POST",
-        body: form,
-      });
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/savetag?id=" + id, {
+          method: "POST",
+          body: form,
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Could not connect to server. Please try again.",
+          data: null,
+        };
+        return;
+      }
 
       if (!response.ok) {
         const error = await response.json();
+        if (response.status == 500) {
+          this.popupMessage = {
+            type: "error",
+            msg: "Could not connect to server. Please try again.",
+            data: null,
+          };
+          return;
+        }
         this.errorMsg = error.message;
         return;
       }

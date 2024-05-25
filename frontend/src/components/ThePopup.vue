@@ -1,6 +1,6 @@
 <template>
   <div>
-    <div class="backdrop hidden" id="backdrop"></div>
+    <div class="backdrop none" id="backdrop"></div>
     <div class="popup-parent">
       <div class="popup-body hidden" id="popup">
         <div v-if="content.type == 'error'">
@@ -38,11 +38,11 @@ export default {
       if (this.contentVal.type !== "") {
         popup.classList.remove("hidden");
         popup.classList.add("show-popup");
-        backdrop.classList.remove("hidden");
+        backdrop.classList.remove("none");
       } else {
         popup.classList.add("hidden");
         popup.classList.remove("show-popup");
-        backdrop.classList.add("hidden");
+        backdrop.classList.add("none");
       }
     },
   },
@@ -52,7 +52,7 @@ export default {
       const backdrop = document.getElementById("backdrop");
       popup.classList.add("hidden");
       popup.classList.remove("show-popup");
-      backdrop.classList.add("hidden");
+      backdrop.classList.add("none");
     },
   },
 };
@@ -145,6 +145,10 @@ export default {
 .hidden {
   opacity: 0;
   transition: all 0.2s;
+}
+
+.none {
+  display: none;
 }
 
 .show-popup {

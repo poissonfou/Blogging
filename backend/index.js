@@ -65,12 +65,12 @@ app.post("/savetag", (req, res) => {
   const id = req.query.id;
 
   if (!tag.length) {
-    return res.json({ message: "Please enter a user tag." }).status(422);
+    return res.status(422).json({ message: "Please enter a user tag." });
   }
 
   User.findByPk(id).then((user) => {
     if (!user) {
-      return res.json({ message: "Failed to fetch user" }).status(422);
+      return res.status(422).json({ message: "Failed to fetch user" });
     }
 
     user.tag = `@${tag}`;
@@ -79,7 +79,7 @@ app.post("/savetag", (req, res) => {
     }
 
     user.save().then((user) => {
-      return res.json({ message: "Success" }).status(201);
+      return res.status(201).json({ message: "Success" });
     });
   });
 });
@@ -100,19 +100,19 @@ app.post("/ai", async (req, res) => {
   const checkIfEmpty = prompt.trim();
 
   if (!prompt.length || !checkIfEmpty.length) {
-    return res.json({ message: "Please provide a prompt." }).status(422);
+    return res.status(422).json({ message: "Please provide a prompt." });
   }
 
   const result = await model.generateContent(prompt);
 
   if (!result) {
-    return res.json({ message: "Couldn't generate response." }).status(500);
+    return res.status(500).json({ message: "Couldn't generate response." });
   }
 
   const response = result.response;
   const text = response.text();
 
-  res.json({ response: text }).status(200);
+  res.status(200).json({ response: text });
 });
 
 app.use(

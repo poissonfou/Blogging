@@ -1,5 +1,6 @@
 <template>
   <div>
+    <the-popup :content="popupMessage"></the-popup>
     <div v-if="route == 'login'" class="auth-body">
       <div class="header">
         <h1>Login</h1>
@@ -118,10 +119,12 @@
 
 <script>
 import TheForm from "../components/TheForm.vue";
+import ThePopup from "../components/ThePopup.vue";
 
 export default {
   components: {
     TheForm,
+    ThePopup,
   },
   data() {
     return {
@@ -130,7 +133,13 @@ export default {
       password: "",
       confirm: "",
       errorMsg: { field: "", msg: null },
+      popupMessage: { type: "", msg: "", data: null },
     };
+  },
+  computed: {
+    route() {
+      return this.$route.query.mode;
+    },
   },
   methods: {
     validate(field) {
@@ -250,9 +259,10 @@ export default {
           body: JSON.stringify(QUERY),
         });
       } catch (e) {
-        this.errorMsg = {
-          field: "",
+        this.popupMessage = {
+          type: "error",
           msg: "Failed to contact server. Please try again.",
+          data: null,
         };
         return;
       }
@@ -330,9 +340,10 @@ export default {
           body: JSON.stringify(QUERY),
         });
       } catch (e) {
-        this.errorMsg = {
-          field: "",
+        this.popupMessage = {
+          type: "error",
           msg: "Failed to contact server. Please try again.",
+          data: null,
         };
         return;
       }
@@ -423,9 +434,10 @@ export default {
           body: JSON.stringify(QUERY),
         });
       } catch (e) {
-        this.errorMsg = {
-          field: "",
+        this.popupMessage = {
+          type: "error",
           msg: "Failed to contact server. Please try again.",
+          data: null,
         };
         return;
       }
@@ -441,11 +453,6 @@ export default {
       }
 
       this.$router.push({ path: "/dashboard" });
-    },
-  },
-  computed: {
-    route() {
-      return this.$route.query.mode;
     },
   },
 };

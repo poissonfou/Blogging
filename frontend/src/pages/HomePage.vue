@@ -1,164 +1,171 @@
 <template>
-  <div class="page">
-    <section class="img-box-hero">
-      <img src="/images/hero_img.avif" alt="illustration" />
-      <div>
-        <h1>Write and share your vision with the world.</h1>
+  <div>
+    <the-popup :content="popupMessage"></the-popup>
+    <div class="page">
+      <section class="img-box-hero">
+        <img src="/images/hero_img.avif" alt="illustration" />
+        <div>
+          <h1>Write and share your vision with the world.</h1>
+          <p>
+            Blogging offers a unique way of expressing yourself online. Follow
+            writers that inspire you and create your own community of
+            like-minded users.
+          </p>
+        </div>
+      </section>
+
+      <section class="content-demo">
+        <h1>Blogging is for everybody.</h1>
         <p>
-          Blogging offers a unique way of expressing yourself online. Follow
-          writers that inspire you and create your own community of like-minded
-          users.
+          Whether you're interested in science, pop culture, or cheesy movies
+          from the 80s, Bloggling has a community for you.
         </p>
-      </div>
-    </section>
 
-    <section class="content-demo">
-      <h1>Blogging is for everybody.</h1>
-      <p>
-        Whether you're interested in science, pop culture, or cheesy movies from
-        the 80s, Bloggling has a community for you.
-      </p>
+        <div class="topics">
+          <ul>
+            <li
+              @click="selectTopic('science')"
+              :class="selectedTopic == 'science' ? 'selected' : ''"
+            >
+              Science
+            </li>
+            <li
+              @click="selectTopic('media')"
+              :class="selectedTopic == 'media' ? 'selected' : ''"
+            >
+              Media
+            </li>
+            <li
+              @click="selectTopic('food')"
+              :class="selectedTopic == 'food' ? 'selected' : ''"
+            >
+              Food
+            </li>
+            <li
+              @click="selectTopic('tech')"
+              :class="selectedTopic == 'tech' ? 'selected' : ''"
+            >
+              Tech
+            </li>
+          </ul>
 
-      <div class="topics">
-        <ul>
-          <li
-            @click="selectTopic('science')"
-            :class="selectedTopic == 'science' ? 'selected' : ''"
-          >
-            Science
-          </li>
-          <li
-            @click="selectTopic('media')"
-            :class="selectedTopic == 'media' ? 'selected' : ''"
-          >
-            Media
-          </li>
-          <li
-            @click="selectTopic('food')"
-            :class="selectedTopic == 'food' ? 'selected' : ''"
-          >
-            Food
-          </li>
-          <li
-            @click="selectTopic('tech')"
-            :class="selectedTopic == 'tech' ? 'selected' : ''"
-          >
-            Tech
-          </li>
-        </ul>
-
-        <div class="articles-display">
-          <div
-            v-for="[index, article] in articles[selectedTopic].entries()"
-            :key="index"
-            :class="
-              index == displayedIndex ? 'article displayed' : 'article hidden'
-            "
-            :id="index"
-          >
-            <div>
-              <h3>{{ article.title }}</h3>
-              <p>{{ article.abstract }}</p>
-            </div>
-            <div class="author-info-box">
-              <span>{{ article.author }}</span>
-              <img :src="article.urlProfile" alt="profile picture" />
+          <div class="articles-display">
+            <div
+              v-for="[index, article] in articles[selectedTopic].entries()"
+              :key="index"
+              :class="
+                index == displayedIndex ? 'article displayed' : 'article hidden'
+              "
+              :id="index"
+            >
+              <div>
+                <h3>{{ article.title }}</h3>
+                <p>{{ article.abstract }}</p>
+              </div>
+              <div class="author-info-box">
+                <span>{{ article.author }}</span>
+                <img :src="article.urlProfile" alt="profile picture" />
+              </div>
             </div>
           </div>
         </div>
-      </div>
-    </section>
+      </section>
 
-    <section class="ai">
-      <h1>Get more done with AI.</h1>
-      <p>
-        Write better and faster with the help of our AI. Ask it questions or
-        give it a writing prompt for a paragraph. His name is Philipe Manor The
-        Third, but you can call him Phil.😉
-      </p>
-      <span
-        >Articles written exclusively by AI are not allowed. Read our
-        <a>terms of service.</a></span
-      >
-    </section>
+      <section class="ai">
+        <h1>Get more done with AI.</h1>
+        <p>
+          Write better and faster with the help of our AI. Ask it questions or
+          give it a writing prompt for a paragraph. His name is Philipe Manor
+          The Third, but you can call him Phil.😉
+        </p>
+        <span
+          >Articles written exclusively by AI are not allowed. Read our
+          <a>terms of service.</a></span
+        >
+      </section>
 
-    <section class="signup">
-      <h1>Get started now.</h1>
-      <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
-      <div class="signup-content">
-        <the-form @submit="signup">
-          <div class="input-box">
-            <label for="name">Name</label>
-            <input
-              type="text"
-              name="name"
-              v-model="name"
-              @blur="validate('name')"
-              :class="errorMsg.field == 'name' ? 'error' : ''"
-            />
-          </div>
-          <div>
-            <label for="email">Email</label>
-            <input
-              type="text"
-              name="email"
-              v-model.trim="email"
-              @blur="validate('email')"
-              :class="errorMsg.field == 'email' ? 'error' : ''"
-            />
-          </div>
-          <div>
-            <label for="password">Password</label>
-            <input
-              type="password"
-              name="password"
-              v-model.trim="password"
-              @blur="validate('password')"
-              :class="errorMsg.field == 'password' ? 'error' : ''"
-            />
-          </div>
-          <div>
-            <label for="confirm">Confirm your password</label>
-            <input
-              type="password"
-              name="confirm"
-              v-model.trim="confirm"
-              @blur="validate('confirm')"
-              :class="errorMsg.field == 'confirm' ? 'error' : ''"
-            />
-          </div>
-          <span
-            >Already have an account?<router-link to="/auth?mode=login"
-              >Login</router-link
-            ></span
-          >
-          <button>Signup</button>
-        </the-form>
-        <img src="/images/sign_up.png" alt="illustration" />
-        <!-- <a href="https://storyset.com/communication">Communication illustrations by Storyset</a>  -->
-      </div>
-    </section>
+      <section class="signup">
+        <h1>Get started now.</h1>
+        <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
+        <div class="signup-content">
+          <the-form @submit="signup">
+            <div class="input-box">
+              <label for="name">Name</label>
+              <input
+                type="text"
+                name="name"
+                v-model="name"
+                @blur="validate('name')"
+                :class="errorMsg.field == 'name' ? 'error' : ''"
+              />
+            </div>
+            <div>
+              <label for="email">Email</label>
+              <input
+                type="text"
+                name="email"
+                v-model.trim="email"
+                @blur="validate('email')"
+                :class="errorMsg.field == 'email' ? 'error' : ''"
+              />
+            </div>
+            <div>
+              <label for="password">Password</label>
+              <input
+                type="password"
+                name="password"
+                v-model.trim="password"
+                @blur="validate('password')"
+                :class="errorMsg.field == 'password' ? 'error' : ''"
+              />
+            </div>
+            <div>
+              <label for="confirm">Confirm your password</label>
+              <input
+                type="password"
+                name="confirm"
+                v-model.trim="confirm"
+                @blur="validate('confirm')"
+                :class="errorMsg.field == 'confirm' ? 'error' : ''"
+              />
+            </div>
+            <span
+              >Already have an account?<router-link to="/auth?mode=login"
+                >Login</router-link
+              ></span
+            >
+            <button>Signup</button>
+          </the-form>
+          <img src="/images/sign_up.png" alt="illustration" />
+          <!-- <a href="https://storyset.com/communication">Communication illustrations by Storyset</a>  -->
+        </div>
+      </section>
 
-    <section class="credit">
-      <p>Emerson Lima | 2024</p>
+      <section class="credit">
+        <p>Emerson Lima | 2024</p>
 
-      <div>
-        <a href="https://github.com/poissonfou"><i class="bi bi-github"></i></a>
-        <a
-          href="https://www.linkedin.com/in/emerson-lima-%F0%9F%8F%B3%EF%B8%8F%E2%80%8D%F0%9F%8C%88-000986237/"
-          ><i class="bi bi-linkedin"></i
-        ></a>
-      </div>
-    </section>
+        <div>
+          <a href="https://github.com/poissonfou"
+            ><i class="bi bi-github"></i
+          ></a>
+          <a
+            href="https://www.linkedin.com/in/emerson-lima-%F0%9F%8F%B3%EF%B8%8F%E2%80%8D%F0%9F%8C%88-000986237/"
+            ><i class="bi bi-linkedin"></i
+          ></a>
+        </div>
+      </section>
+    </div>
   </div>
 </template>
 
 <script>
 import TheForm from "../components/TheForm.vue";
+import ThePopup from "../components/ThePopup.vue";
 
 export default {
   components: {
     TheForm,
+    ThePopup,
   },
   data() {
     return {
@@ -291,6 +298,7 @@ export default {
       email: "",
       password: "",
       confirm: "",
+      popupMessage: { type: "", msg: "", data: null },
     };
   },
   methods: {
@@ -426,9 +434,10 @@ export default {
           body: JSON.stringify(QUERY),
         });
       } catch (e) {
-        this.errorMsg = {
-          field: "",
+        this.popupMessage = {
+          type: "error",
           msg: "Failed to contact server. Please try again.",
+          data: null,
         };
         return;
       }
