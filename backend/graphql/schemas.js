@@ -31,15 +31,12 @@ module.exports = buildSchema(`
         tags: [String]!
         createdAt: String
         updatedAt: String
-        comments: [Comment]
     }
 
     type Comment {
         id: Int
         content: String!
-        author: String!
-        picture: String
-        authorId: Int!
+        author: User!
         likes: [Int!]
         dislikes: [Int!]
     }
@@ -57,7 +54,7 @@ module.exports = buildSchema(`
         body: String!
         tags: [String]
         images: [String]
-        userId: Int!
+        token: String!
     }
 
     input editPostInput{
@@ -67,6 +64,7 @@ module.exports = buildSchema(`
         tags: [String]
         images: [String]
         postId: Int!
+        token: String!
     }
 
     input signupData{
@@ -77,22 +75,23 @@ module.exports = buildSchema(`
     }
 
     type RootQuery{
-        getUser(id: Int!): User!
-        getPost(postId: Int!, authorId: Int!):PostData
+        getUser(id: Int!, token: String, route: String): User!
+        getPost(postId: Int!):PostData
+        getComments(postId: Int): [Comment]
         login(email: String!, password: String!): AuthData!
         search(query: String): [User]
     }
 
     type RootMutation {
         signup(signupInput: signupData): AuthData!
-        update(name: String, password: String, confirm: String, id: Int): Message!
+        update(name: String, password: String, confirm: String, token: String): Message!
         addPost(postInput: addPostInput): Message!
         editPost(postInput: editPostInput): Message!
-        deletePost(id: Int): Message!
-        follow(id: Int, userId: Int): Follower
-        unfollow(id: Int, userId: Int): Message
-        comment(postId: Int, comment: String, author: String, picture: String, authorId: Int): Comment
-        commentInteraction(type: String!, userId: Int!, commentId: Int!): Message!
+        deletePost(id: Int, token: String): Message!
+        follow(id: Int, token: String): Follower
+        unfollow(id: Int, token: String): Message
+        comment(postId: Int, comment: String, token: String): Comment
+        commentInteraction(type: String!, token: String, commentId: Int!): Message!
     }
 
     schema {

@@ -305,7 +305,7 @@ export default {
         return;
       }
 
-      if (!password.length <= 5) {
+      if (password.length <= 5) {
         this.errorMsg = {
           field: "password",
           msg: "Password needs to be longer than five digits.",
@@ -369,7 +369,7 @@ export default {
       const confirm = form.get("confirm").trim();
       const name = form.get("name");
       const checkIfEmpty = name.trim();
-      const id = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       if (name.length && !checkIfEmpty.length) {
         this.errorMsg = {
@@ -405,18 +405,10 @@ export default {
         }
       }
 
-      if (!id) {
-        this.errorMsg = {
-          field: "",
-          msg: "Invalid id. Please login again.",
-        };
-        return;
-      }
-
       const QUERY = {
         query: `
            mutation {
-           update(name: "${name}", password: "${password}", confirm: "${confirm}", id:${id}){
+           update(name: "${name}", password: "${password}", confirm: "${confirm}", token:"${token}"){
               message
             }
           }

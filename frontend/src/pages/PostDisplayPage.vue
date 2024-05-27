@@ -32,56 +32,67 @@
       <the-form @submit="postComment">
         <div class="input-box">
           <label for="comment">Write a comment</label>
-          <textarea name="comment" id="comment" cols="20" rows="5"></textarea>
+          <textarea
+            name="comment"
+            id="comment"
+            cols="20"
+            rows="5"
+            v-model="comment"
+          ></textarea>
         </div>
         <button>Comment</button>
       </the-form>
     </div>
     <div class="comments">
       <h1>Comments</h1>
-      <div
-        v-for="[index, comment] in post.comments.entries()"
-        :key="index"
-        class="comment"
-      >
-        <div class="comment-author" @click="redirectProfile(comment.authorId)">
-          <div v-if="!comment.picture" class="no-pic-comment">
-            {{ comment.author[0] }}
+      <div v-if="comments.length">
+        <div
+          v-for="[index, comment] in comments.entries()"
+          :key="index"
+          class="comment"
+        >
+          <div
+            class="comment-author"
+            @click="redirectProfile(comment.author.id)"
+          >
+            <div v-if="!comment.author.picture" class="no-pic-comment">
+              {{ comment.author.name[0] }}
+            </div>
+            <div v-else class="img-comment">
+              <img
+                :src="'http://localhost:3000/images/' + comment.author.picture"
+                alt="user picture"
+              />
+            </div>
+            <span>{{ comment.author.name }}</span>
           </div>
-          <div v-else class="img-comment">
-            <img
-              :src="'http://localhost:3000/images/' + comment.picture"
-              alt="user picture"
-            />
+          <div class="comment-content">
+            {{ comment.content }}
           </div>
-          <span>{{ comment.author }}</span>
-        </div>
-        <div class="comment-content">
-          {{ comment.content }}
-        </div>
-        <div class="buttons">
-          <div>
-            <span
-              :class="`${'material-symbols-outlined'} ${
-                comment.likes.includes(userId) ? 'button-selected' : ''
-              }`"
-              @click="commentInteraction('likes', comment.id)"
-              id="likes"
-            >
-              thumb_up
-            </span>
-            <span>{{ comment.likes.length }}</span>
-          </div>
-          <div>
-            <span
-              :class="`${'material-symbols-outlined'} ${
-                comment.dislikes.includes(userId) ? 'button-selected' : ''
-              }`"
-              @click="commentInteraction('dislikes', comment.id)"
-              id="dislikes"
-            >
-              thumb_down </span
-            ><span>{{ comment.dislikes.length }}</span>
+          <div class="buttons">
+            <div>
+              <span
+                :class="`${'material-symbols-outlined'} ${
+                  comment.likes.includes(userId) ? 'button-selected' : ''
+                }`"
+                @click="commentInteraction('likes', comment.id)"
+                id="likes"
+              >
+                thumb_up
+              </span>
+              <span>{{ comment.likes.length }}</span>
+            </div>
+            <div>
+              <span
+                :class="`${'material-symbols-outlined'} ${
+                  comment.dislikes.includes(userId) ? 'button-selected' : ''
+                }`"
+                @click="commentInteraction('dislikes', comment.id)"
+                id="dislikes"
+              >
+                thumb_down </span
+              ><span>{{ comment.dislikes.length }}</span>
+            </div>
           </div>
         </div>
       </div>
@@ -103,8 +114,9 @@ export default {
         body: "",
         id: null,
         tags: [],
-        comments: [],
       },
+      comments: [],
+      comment: "",
       popupMessage: {
         type: "",
         msg: "",
@@ -118,15 +130,15 @@ export default {
   },
   computed: {
     userId() {
-      return JSON.parse(localStorage.getItem("user")).id;
+      return this.$store.state.user.id;
     },
   },
   methods: {
-    async fetchPost(postId, authorId) {
+    async fetchPost(postId) {
       const QUERY = {
         query: `
           {
-             getPost(postId: ${postId}, authorId: ${authorId}){
+             getPost(postId: ${postId}){
               author {
                 id
                 picture
@@ -139,15 +151,6 @@ export default {
                tags
                createdAt
                updatedAt
-               comments {
-                 id
-                 author
-                 authorId
-                 content
-                 likes
-                 dislikes
-                 picture
-               }
              }
           }
         `,
@@ -175,6 +178,14 @@ export default {
       const responseData = await response.json();
 
       if (responseData.errors) {
+        if (responseData.errors[0].status == 401) {
+          this.popupMessage = {
+            type: "error",
+            msg: "Please login to comment.",
+            data: null,
+          };
+        }
+
         this.popupMessage = {
           type: "error",
           msg: responseData.errors[0].message,
@@ -185,35 +196,21 @@ export default {
 
       this.post = responseData.data.getPost;
     },
-    async postComment(event) {
-      event.preventDefault();
-      const form = new FormData(event.target);
-      const comment = form.get("comment");
-      const picture = this.$store.state.user.picture;
-      const author = this.$store.state.user.name;
-      const idAuthor = this.$store.state.user.id;
-      const postId = this.$route.params.id;
-
-      if (!comment.length && !comment.replace(/\s/g, "").length) return;
-
-      if (!postId && typeof +postId !== "number") {
-        this.popupMessage = {
-          type: "error",
-          msg: "Something went wrong. Please reload.",
-          data: null,
-        };
-      }
+    async fetchComments() {
+      const postId = this.post.id;
 
       const QUERY = {
         query: `
-        mutation{
-	          comment(postId: ${+postId}, author: "${author}", comment: "${comment}", picture: "${picture}", authorId: ${+idAuthor}){
-            author
-            authorId
+        {
+	          getComments(postId: ${+postId}){
+            author {
+              id
+              name
+              picture
+            }
             content
             likes
             dislikes
-            picture
           }
         }
         `,
@@ -240,7 +237,7 @@ export default {
 
       const responseData = await response.json();
 
-      if (!responseData.errors) {
+      if (responseData.errors) {
         this.popupMessage = {
           type: "error",
           msg: responseData.errors[0].message,
@@ -249,13 +246,89 @@ export default {
         return;
       }
 
-      this.post.comments.unshift(responseData.data.comment);
+      this.comments = responseData.data.getComments;
+    },
+    async postComment(event) {
+      event.preventDefault();
+      const form = new FormData(event.target);
+      const comment = form.get("comment");
+      const { token, id } = JSON.parse(localStorage.getItem("user"));
+      const postId = this.$route.params.id;
+
+      if (!comment.length && !comment.replace(/\s/g, "").length) return;
+
+      if (!postId && typeof +postId !== "number") {
+        this.popupMessage = {
+          type: "error",
+          msg: "Something went wrong. Please reload.",
+          data: null,
+        };
+      }
+
+      const QUERY = {
+        query: `
+        mutation{
+	          comment(postId: ${+postId}, comment: "${comment}", token: "${token}"){
+            author {
+              name
+              id
+              picture
+            }
+            content
+            likes
+            dislikes
+          }
+        }
+        `,
+      };
+
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Something went wrong. Please reload.",
+          data: null,
+        };
+        return;
+      }
+
+      const responseData = await response.json();
+
+      if (responseData.errors) {
+        this.popupMessage = {
+          type: "error",
+          msg: responseData.errors[0].message,
+          data: null,
+        };
+        return;
+      }
+
+      this.comment = "";
+      this.comments.unshift({
+        author: {
+          name: this.$store.state.user.name,
+          id: id,
+          picture: this.$store.state.user.picture,
+        },
+        content: responseData.data.comment.content,
+        likes: responseData.data.comment.likes,
+        dislikes: responseData.data.comment.dislikes,
+      });
     },
     async redirectProfile(id) {
       this.$router.push("/profile/" + id);
     },
     async commentInteraction(type, commentId) {
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token, userId } = JSON.parse(localStorage.getItem("user"));
 
       const idxComment = this.post.comments.map((c) => c.id).indexOf(commentId);
       const oppositeAction = type == "likes" ? "dislikes" : "likes";
@@ -293,7 +366,7 @@ export default {
       const QUERY = {
         query: `
         mutation{
-          commentInteraction(type: "${type}", userId: ${+userId} , commentId: ${+commentId}){
+          commentInteraction(type: "${type}", token: "${token}" , commentId: ${+commentId}){
         	  message
           }
         }
@@ -327,6 +400,13 @@ export default {
       const responseData = await response.json();
 
       if (!responseData.errors) {
+        if (responseData.errors[0].status == 401) {
+          this.popupMessage = {
+            type: "error",
+            msg: "Please login to interact with comments.",
+            data: null,
+          };
+        }
         console.log("something went wrong", responseData.errors[0].message);
         this.post.comments[idxComment][type] = copyArrType;
         this.post.comments[idxComment][oppositeAction] = copyArrOpposite;
@@ -340,9 +420,10 @@ export default {
     },
   },
   async mounted() {
-    await this.fetchPost(this.$route.params.id, this.$route.params.authorId);
+    await this.fetchPost(this.$route.params.id);
     const body = document.getElementById("body");
     body.innerHTML = this.post.body;
+    await this.fetchComments();
   },
 };
 </script>
@@ -464,6 +545,7 @@ export default {
   border: solid 2px black;
   padding: 1em;
   border-radius: 5px;
+  margin: 0.5em 0em;
 }
 
 .comment-author {

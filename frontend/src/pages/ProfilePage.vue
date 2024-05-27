@@ -40,9 +40,7 @@
         <the-post-miniature
           v-for="[index, post] in user.posts.entries()"
           :key="index"
-          :titlePost="post.title"
-          :abstract="post.abstract"
-          :tags="post.tags"
+          :post="post"
           @click="showPost(post.id)"
         ></the-post-miniature>
       </div>
@@ -82,11 +80,12 @@ export default {
   methods: {
     async fetchUser() {
       const id = this.$route.params.id;
+      const route = this.$route.path;
 
       const QUERY = {
         query: `
           {
-             getUser(id: ${id}){
+             getUser(id: ${id}, token: "", route: "${route}" ){
               id
               name
               picture
@@ -163,12 +162,12 @@ export default {
       this.user = user;
     },
     async follow(id) {
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              follow(id: ${id}, userId: ${userId}){
+              follow(id: ${id}, token: "${token}"){
                 name
                 id
                 picture
@@ -209,12 +208,12 @@ export default {
       this.$store.commit("follow", data.data.follow);
     },
     async unfollow(id) {
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              unfollow(id: ${id}, userId: ${userId}){
+              unfollow(id: ${id}, token: "${token}")"{
                 message
               }
             }
@@ -257,9 +256,7 @@ export default {
     async showPost(id) {
       const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
       const post = this.user.posts[postIdx];
-      this.$router.push(
-        "/article/" + this.user.id + "/" + id + "/" + post.title
-      );
+      this.$router.push("/article/" + id + "/" + post.title);
     },
   },
   mounted() {
@@ -397,39 +394,5 @@ main {
   background: rgb(15, 15, 15);
   border-radius: 10px;
   border: solid white 3px;
-}
-
-.post-miniature {
-  border: solid 3px rgb(51, 51, 51);
-  border-radius: 5px;
-  padding: 0.5em;
-  margin-bottom: 0.5em;
-  font-family: "Zilla Slab", serif;
-}
-
-.post-miniature:hover {
-  cursor: pointer;
-}
-
-.post-miniature h2 {
-  margin: 0;
-  font-family: "Pridi", serif;
-  font-size: 2rem;
-}
-
-.post-miniature p {
-  margin: 0;
-  font-family: "Zilla Slab", serif;
-  color: gray;
-  font-size: 1.5rem;
-  margin-bottom: 0.4em;
-}
-
-.tag {
-  margin-right: 0.3em;
-  background: rgb(64, 89, 173);
-  padding: 0.5em;
-  border-radius: 8px;
-  font-size: 0.8rem;
 }
 </style>

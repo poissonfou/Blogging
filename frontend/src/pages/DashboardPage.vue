@@ -252,10 +252,10 @@ export default {
   },
   methods: {
     async fetchUser() {
-      console.log("running");
-      const id = JSON.parse(localStorage.getItem("user")).id;
+      const { id, token } = JSON.parse(localStorage.getItem("user"));
+      const route = this.$route.path;
 
-      if (typeof id !== "number") {
+      if (!id || typeof id !== "number") {
         this.error = "Invalid id, please login again.";
         return;
       }
@@ -263,7 +263,7 @@ export default {
       const QUERY = {
         query: `
           {
-             getUser(id: ${id}){
+             getUser(id: ${id}, route: "${route}", token: "${token}" ){
               id
               name
               picture
@@ -286,7 +286,7 @@ export default {
               following {
                 id
                 name
-                picture 
+                picture
                 tag
               }
               tag
@@ -353,7 +353,7 @@ export default {
       const title = form.get("title");
       const abstract = form.get("abstract");
       const body = document.getElementById("body").innerHTML;
-      const id = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
       const tags = [...document.querySelectorAll(".selected-tag")].map(
         (tag) => tag.innerText
       );
@@ -413,7 +413,7 @@ export default {
           mutation{
 	          addPost(postInput: {title: "${title}", abstract: "${abstract}", body: "${body}", tags: ${JSON.stringify(
           tags
-        )}, images: ${JSON.stringify([])}, userId: ${id}}){
+        )}, images: ${JSON.stringify([])}, token: "${token}"}){
                message
                data {
                  title
@@ -482,6 +482,7 @@ export default {
       const abstract = form.get("abstract");
       const body = form.get("body");
       const id = event.target.id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
       const tags = [...document.querySelectorAll(".selected-tag")].map(
         (tag) => tag.innerText
       );
@@ -546,7 +547,7 @@ export default {
         mutation{
 	          editPost(postInput: {title: "${title}", abstract: "${abstract}", body: "${body}", images: ${JSON.stringify(
           []
-        )}, tags: ${JSON.stringify(tags)}, postId: ${id}}){
+        )}, tags: ${JSON.stringify(tags)}, postId: ${id}, token: "${token}"}){
              message
              data{
               title
@@ -610,6 +611,7 @@ export default {
       this.tab = "posts";
     },
     async deletePost(id) {
+      const { token } = JSON.parse(localStorage.getItem("user"));
       const popup = document.getElementById("popup");
       popup.classList.add("hidden");
       popup.classList.remove("show-popup");
@@ -617,7 +619,7 @@ export default {
       const QUERY = {
         query: `
           mutation{
-	          deletePost(id: ${id}){
+	          deletePost(id: ${id}, token: "${token}"){
               message
             }
           }
@@ -668,10 +670,8 @@ export default {
     },
     showPost(id) {
       const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
-      const post = JSON.parse(JSON.stringify(this.user.posts[postIdx]));
-      this.$router.push(
-        "/article/" + this.user.id + "/" + id + "/" + post.title
-      );
+      const post = this.user.posts[postIdx];
+      this.$router.push("/article/" + id + "/" + post.title);
     },
     showConnections(tab) {
       if (this.displayConnections == tab) {
@@ -704,12 +704,12 @@ export default {
       };
     },
     async follow(id) {
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              follow(id: ${id}, userId: ${userId}){
+              follow(id: ${id}, token: "${token}"){
                 name
                 id
                 picture
@@ -760,12 +760,12 @@ export default {
       });
     },
     async unfollow(id) {
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              unfollow(id: ${id}, userId: ${userId}){
+              unfollow(id: ${id}, token: "${token}"){
                 message
               }
             }
@@ -812,6 +812,7 @@ export default {
       const textbox = document.getElementById("ai-textbox");
       const prompt = textbox.innerText;
       const checkIfEmpty = prompt.trim();
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       if (prompt == "" || !checkIfEmpty.length) {
         this.errorAi = "Please provide a prompt.";
@@ -825,6 +826,7 @@ export default {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
           },
           body: JSON.stringify({ prompt }),
         });

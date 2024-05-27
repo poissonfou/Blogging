@@ -3,7 +3,7 @@
     <h2>{{ post.title }}</h2>
     <p>{{ post.abstract }}</p>
     <div class="tags-and-btns">
-      <div>
+      <div class="tags-container">
         <span
           v-for="[index, tag] in post.tags.entries()"
           :key="index"
@@ -52,6 +52,10 @@ export default {
   color: gray;
   font-size: 1.5rem;
   margin-bottom: 0.4em;
+}
+
+.tags-container {
+  padding: 0.2em;
 }
 
 .tag {

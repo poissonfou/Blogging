@@ -67,12 +67,12 @@ export default {
   methods: {
     async follow(event, id) {
       event.stopPropagation();
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              follow(id: ${id}, userId: ${userId}){
+              follow(id: ${id}, token: "${token}"){
                 name
                 id
                 picture
@@ -114,12 +114,12 @@ export default {
     },
     async unfollow(event, id) {
       event.stopPropagation();
-      const userId = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
             mutation{
-              unfollow(id: ${id}, userId: ${userId}){
+              unfollow(id: ${id}, token: "${token}"){
                 message
               }
             }

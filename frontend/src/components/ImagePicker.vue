@@ -61,7 +61,7 @@ export default {
     async saveImage() {
       const form = new FormData();
       const picture = document.forms["update-image"]["picture"].files[0];
-      const id = JSON.parse(localStorage.getItem("user")).id;
+      const { token, id } = JSON.parse(localStorage.getItem("user"));
       let response;
 
       if (!picture) {
@@ -85,6 +85,9 @@ export default {
       try {
         response = await fetch("http://localhost:3000/updateImage?id=" + id, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: form,
         });
       } catch (e) {

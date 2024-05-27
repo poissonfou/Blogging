@@ -11,14 +11,101 @@ import SearchPage from "./pages/SearchPage.vue";
 const router = createRouter({
   history: createWebHistory(),
   routes: [
-    { path: "/", redirect: "/home" },
-    { path: "/home", name: "home", components: { default: HomePage } },
-    { path: "/auth", name: "auth", components: { default: AuthPage } },
-    { path: "/welcome", name: "welcome", components: { default: WelcomePage } },
+    {
+      path: "/",
+      redirect: () => {
+        if (
+          !localStorage.getItem("user") ||
+          !JSON.parse(localStorage.getItem("user"))
+        )
+          return "/home";
+        const { token } = JSON.parse(localStorage.getItem("user"));
+
+        if (token && token.length) {
+          return "/dashboard";
+        } else {
+          return "/home";
+        }
+      },
+    },
+    {
+      path: "/home",
+      name: "home",
+      components: { default: HomePage },
+      beforeEnter(to, from, next) {
+        if (
+          !localStorage.getItem("user") ||
+          !JSON.parse(localStorage.getItem("user"))
+        )
+          next(true);
+        const { token } = JSON.parse(localStorage.getItem("user"));
+
+        if (token) {
+          next(from.fullPath);
+        } else {
+          next(true);
+        }
+      },
+    },
+    {
+      path: "/auth",
+      name: "auth",
+      components: { default: AuthPage },
+      beforeEnter(to, from, next) {
+        if (to.query.mode == "update") {
+          if (
+            !localStorage.getItem("user") ||
+            !JSON.parse(localStorage.getItem("user"))
+          )
+            return next(false);
+          const { token } = JSON.parse(localStorage.getItem("user"));
+
+          if (token && token.length) {
+            return next(true);
+          } else {
+            return next(false);
+          }
+        }
+        next();
+      },
+    },
+    {
+      path: "/welcome",
+      name: "welcome",
+      components: { default: WelcomePage },
+      async beforeEnter(to, from, next) {
+        if (
+          !localStorage.getItem("user") ||
+          !JSON.parse(localStorage.getItem("user"))
+        )
+          return next(false);
+        const { token } = JSON.parse(localStorage.getItem("user"));
+
+        if (token && token.length) {
+          next(false);
+        } else {
+          next(true);
+        }
+      },
+    },
     {
       path: "/dashboard",
       name: "dashboard",
       components: { default: DashboardPage },
+      beforeEnter(to, from, next) {
+        if (
+          !localStorage.getItem("user") ||
+          !JSON.parse(localStorage.getItem("user"))
+        )
+          return next(false);
+        const { token } = JSON.parse(localStorage.getItem("user"));
+
+        if (token && token.length) {
+          next(true);
+        } else {
+          next(false);
+        }
+      },
     },
     {
       path: "/search",
@@ -26,7 +113,7 @@ const router = createRouter({
       components: { default: SearchPage },
     },
     {
-      path: "/article/:authorId/:id/:title",
+      path: "/article/:id/:title",
       name: "article",
       components: { default: PostDisplayPage },
     },
@@ -35,11 +122,24 @@ const router = createRouter({
       name: "profile",
       components: { default: ProfilePage },
     },
-  ],
-});
+    {
+      path: "/:unsupportedRoute(.*)",
+      redirect: () => {
+        if (
+          !localStorage.getItem("user") ||
+          !JSON.parse(localStorage.getItem("user"))
+        )
+          return "/home";
+        const { token } = JSON.parse(localStorage.getItem("user"));
 
-router.beforeEach(function (_, _2, next) {
-  next();
+        if (token && token.length) {
+          return "/dashboard";
+        } else {
+          return "/home";
+        }
+      },
+    },
+  ],
 });
 
 export default router;

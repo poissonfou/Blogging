@@ -6,6 +6,7 @@ const User = require("../models/user");
 const Post = require("../models/post");
 const Comment = require("../models/comment");
 const io = require("../socket");
+const { authenticateUserGraphQL } = require("../auth/auth");
 
 module.exports = {
   login: async ({ email, password }) => {
@@ -132,10 +133,12 @@ module.exports = {
 
     return { token, id: newUser.id };
   },
-  update: async ({ name, password, confirm, id }) => {
+  update: async ({ name, password, confirm, token }) => {
     const nameVal = name;
     const passwordVal = password.trim();
     const confirmVal = confirm.trim();
+
+    const userId = authenticateUserGraphQL(token);
 
     if (!nameVal.length && !passwordVal.length) {
       const error = new Error("You must provide at least one value.");
@@ -163,7 +166,7 @@ module.exports = {
       throw error;
     }
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(userId);
 
     if (!user) {
       const error = new Error("User not found!");
@@ -184,14 +187,19 @@ module.exports = {
 
     return { message: "Success" };
   },
-  getUser: async ({ id }) => {
-    if (id < 0 || typeof id !== "number") {
+  getUser: async ({ id, route, token }) => {
+    let userId = id;
+    if (userId < 0 || typeof userId !== "number") {
       const error = new Error("Invalid id.");
       error.status = 500;
       throw error;
     }
 
-    const user = await User.findByPk(id);
+    if (route === "/dashboard") {
+      userId = authenticateUserGraphQL(token);
+    }
+
+    const user = await User.findByPk(userId);
 
     if (!user) {
       const error = new Error("User not found.");
@@ -230,14 +238,22 @@ module.exports = {
       tag: user.tag,
     };
   },
-  getPost: async ({ postId, authorId }) => {
+  getPost: async ({ postId }) => {
     if (postId < 0 || typeof postId !== "number") {
       const error = new Error("Invalid parameter provided.");
       error.status = 500;
       throw error;
     }
 
-    const user = await User.findByPk(authorId);
+    const post = await Post.findByPk(postId);
+
+    if (!post) {
+      const error = new Error("Post not found.");
+      error.status = 500;
+      throw error;
+    }
+
+    const user = await User.findByPk(post.userId);
 
     if (!user) {
       const error = new Error("No user found.");
@@ -245,38 +261,39 @@ module.exports = {
       throw error;
     }
 
-    const posts = await user.getPosts();
-    let selectedPost = null;
+    post.tags = JSON.parse(post.tags);
 
-    for (let i = 0; i < posts.length; i++) {
-      if (posts[i].dataValues.id == postId) {
-        const comments = await posts[i].getComments();
-        posts[i].dataValues.comments = comments;
-        selectedPost = posts[i].dataValues;
-        break;
-      }
-    }
+    return {
+      author: { ...user.dataValues },
+      ...post.dataValues,
+    };
+  },
+  getComments: async ({ postId }) => {
+    const post = await Post.findByPk(postId);
 
-    if (!selectedPost) {
+    if (!post) {
       const error = new Error("Post not found.");
       error.status = 500;
       throw error;
     }
 
-    selectedPost.tags = JSON.parse(selectedPost.tags);
+    const comments = await post.getComments();
 
-    console.log(selectedPost);
-    for (let i = 0; i < selectedPost.comments.length; i++) {
-      const comment = selectedPost.comments[i];
-      comment.dataValues.likes = JSON.parse(comment.dataValues.likes);
-      comment.dataValues.dislikes = JSON.parse(comment.dataValues.dislikes);
+    if (!comments) {
+      const error = new Error("Could not fetch comments");
+      error.status = 500;
+      throw error;
     }
 
-    return {
-      author: user,
-      comments: [{ ...selectedPost.comments.dataValues }],
-      ...selectedPost,
-    };
+    for (let i = 0; i < comments.length; i++) {
+      const comment = comments[i];
+      comments[i].dataValues.likes = JSON.parse(comment.dataValues.likes);
+      comments[i].dataValues.dislikes = JSON.parse(comment.dataValues.dislikes);
+      const author = await User.findByPk(comment.author);
+      comments[i].dataValues.author = { ...author.dataValues };
+    }
+
+    return comments;
   },
   search: async ({ query }) => {
     const results = await User.findAll({
@@ -317,7 +334,9 @@ module.exports = {
     const body = postInput.body;
     const tags = postInput.tags;
     const images = postInput.images;
-    const id = postInput.userId;
+    const token = postInput.token;
+
+    const userId = authenticateUserGraphQL(token);
 
     if (
       !title.length ||
@@ -349,7 +368,7 @@ module.exports = {
       throw error;
     }
 
-    const user = await User.findByPk(id);
+    const user = await User.findByPk(userId);
 
     if (!user) {
       const error = new Error("Could not save your post. Please try again.");
@@ -403,6 +422,9 @@ module.exports = {
     const tags = postInput.tags;
     const images = postInput.images;
     const postId = postInput.postId;
+    const token = postInput.token;
+
+    authenticateUserGraphQL(token);
 
     if (!postId || typeof +postId !== "number") {
       const error = new Error(
@@ -469,8 +491,10 @@ module.exports = {
       },
     };
   },
-  deletePost: async ({ id }) => {
+  deletePost: async ({ id, token }) => {
     const post = await Post.findByPk(id);
+
+    authenticateUserGraphQL(token);
 
     if (!post) {
       throw new Error("Post not found.");
@@ -480,7 +504,9 @@ module.exports = {
 
     return { message: "Success" };
   },
-  follow: async ({ id, userId }) => {
+  follow: async ({ id, token }) => {
+    const userId = authenticateUserGraphQL(token);
+
     const user = await User.findByPk(userId);
     const userFollowed = await User.findByPk(id);
 
@@ -534,7 +560,8 @@ module.exports = {
       tag: userFollowed.tag,
     };
   },
-  unfollow: async ({ id, userId }) => {
+  unfollow: async ({ id, token }) => {
+    const userId = authenticateUserGraphQL(token);
     const user = await User.findByPk(userId);
 
     if (!user) {
@@ -564,7 +591,9 @@ module.exports = {
 
     return { message: "Following added." };
   },
-  comment: async ({ postId, comment, author, picture, authorId }) => {
+  comment: async ({ postId, comment, token }) => {
+    const userId = authenticateUserGraphQL(token);
+
     if (!postId && typeof +postId !== "number") {
       const error = new Error("Coulnd't find post.");
       error.status = 422;
@@ -583,9 +612,7 @@ module.exports = {
 
     const newComment = await post.createComment({
       content: comment,
-      author,
-      picture,
-      authorId,
+      author: userId,
       likes: JSON.stringify([]),
       dislikes: JSON.stringify([]),
     });
@@ -597,10 +624,18 @@ module.exports = {
     }
 
     return {
-      ...newComment.dataValues,
+      author: {
+        name: "",
+        id: -1,
+        picture: "",
+      },
+      content: newComment.dataValues.content,
+      likes: JSON.parse(newComment.dataValues.likes),
+      dislikes: JSON.parse(newComment.dataValues.dislikes),
     };
   },
-  commentInteraction: async ({ type, userId, commentId }) => {
+  commentInteraction: async ({ type, token, commentId }) => {
+    const userId = authenticateUserGraphQL(token);
     const comment = await Comment.findByPk(commentId);
 
     if (!comment) {

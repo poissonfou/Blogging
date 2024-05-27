@@ -9,9 +9,7 @@ const Comment = sequelize.define("comment", {
     primaryKey: true,
   },
   content: Sequelize.STRING,
-  author: Sequelize.STRING,
-  picture: Sequelize.STRING,
-  authorId: Sequelize.INTEGER,
+  author: Sequelize.INTEGER,
   likes: Sequelize.STRING,
   dislikes: Sequelize.STRING,
 });

@@ -64,13 +64,14 @@ export default {
       const form = new FormData();
       const picture = document.forms["form"]["picture"].files[0];
       const userTag = document.getElementById("userTag").value.trim();
+      const { id } = JSON.parse(localStorage.getItem("user"));
 
       if (!userTag.length) {
         this.errorMsg = { field: "", msg: "Please enter a user tag." };
         return;
       }
 
-      const id = JSON.parse(localStorage.getItem("user")).id;
+      const { token } = JSON.parse(localStorage.getItem("user"));
 
       form.append("picture", picture);
       form.append("userTag", userTag.trim());
@@ -80,6 +81,9 @@ export default {
       try {
         response = await fetch("http://localhost:3000/savetag?id=" + id, {
           method: "POST",
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
           body: form,
         });
       } catch (e) {

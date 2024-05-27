@@ -9,6 +9,7 @@ const { GoogleGenerativeAI } = require("@google/generative-ai");
 const graphqlSchema = require("./graphql/schemas");
 const graphqlResolver = require("./graphql/resolvers");
 const sequelize = require("./database");
+const { authenticateUserHTTP } = require("./auth/auth");
 
 const User = require("./models/user");
 const Post = require("./models/post");
@@ -36,7 +37,6 @@ const fileStorage = multer.diskStorage({
     cb(null, "images");
   },
   filename: (req, file, cb) => {
-    console.log("here");
     cb(null, req.query.id + "-" + file.originalname);
   },
 });
@@ -62,7 +62,8 @@ app.use(
 
 app.post("/updateImage", async (req, res) => {
   const img = req.file;
-  const id = req.query.id;
+
+  const userId = authenticateUserHTTP(req);
 
   if (!img)
     return res.status(422).json({ message: "Please choose a picture." });
@@ -79,7 +80,7 @@ app.post("/updateImage", async (req, res) => {
     });
   }
 
-  const user = await User.findByPk(id);
+  const user = await User.findByPk(userId);
 
   if (!user) {
     return res.status(422).json({ message: "Failed to fetch user" });
@@ -93,7 +94,7 @@ app.post("/updateImage", async (req, res) => {
     }
   });
 
-  user.picture = id + "-" + img.originalname;
+  user.picture = userId + "-" + img.originalname;
 
   await user.save();
 
@@ -128,20 +129,27 @@ app.post("/updateImage", async (req, res) => {
 app.post("/savetag", (req, res) => {
   const img = req.file;
   const tag = req.body.userTag.trim();
-  const id = req.query.id;
+
+  const userId = authenticateUserHTTP(req);
 
   if (!tag.length) {
     return res.status(422).json({ message: "Please enter a user tag." });
   }
 
-  User.findByPk(id).then((user) => {
+  User.findByPk(userId).then((user) => {
     if (!user) {
       return res.status(422).json({ message: "Failed to fetch user" });
     }
 
+    if (user.tag) {
+      return res
+        .status(422)
+        .json({ message: "User has already created a tag." });
+    }
+
     user.tag = `@${tag}`;
     if (img) {
-      user.picture = id + "-" + img.originalname;
+      user.picture = userId + "-" + img.originalname;
     }
 
     user.save().then((user) => {
@@ -152,8 +160,14 @@ app.post("/savetag", (req, res) => {
 
 app.get("/images/:name", (req, res, next) => {
   let name = req.params.name;
-  console.log(name);
-  let pathImg = path.join(__dirname, "images", name);
+  let pathImg;
+  try {
+    pathImg = path.join(__dirname, "images", name);
+  } catch (e) {
+    const error = new Error("Could not find file.");
+    error.statusCode = 401;
+    throw error;
+  }
   const file = fs.createReadStream(pathImg);
   res.setHeader("Content-Type", "image");
   file.pipe(res);
@@ -163,6 +177,8 @@ const genAI = new GoogleGenerativeAI("AIzaSyA1FR6TMPcxCJZm6x-Ji6OTKGmoXO0W2Xw");
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 app.post("/ai", async (req, res) => {
+  authenticateUserHTTP(req);
+
   const prompt = req.body.prompt;
   const checkIfEmpty = prompt.trim();
 

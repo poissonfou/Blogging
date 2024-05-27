@@ -27,9 +27,7 @@ export default {
   components: { TheHeader, TheNotification },
   data() {
     return {
-      user: localStorage.getItem("user")
-        ? JSON.parse(localStorage.getItem("user"))
-        : null,
+      user: JSON.parse(localStorage.getItem("user")),
     };
   },
   computed: {
