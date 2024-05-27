@@ -1,6 +1,9 @@
 const validator = require("validator");
 const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
+const levenshtein = require("js-levenshtein");
+const { QueryTypes } = require("sequelize");
+const sequelize = require("../database");
 
 const User = require("../models/user");
 const Post = require("../models/post");
@@ -295,38 +298,97 @@ module.exports = {
 
     return comments;
   },
-  search: async ({ query }) => {
-    const results = await User.findAll({
-      where: {
-        name: query,
-      },
-    });
+  search: async ({ query, userId }) => {
+    const queryLowerCase = query.toLowerCase();
+    const firstCaracthers = queryLowerCase.slice(0, 4);
+    const usersResults = [];
+    const postsResults = [];
 
-    if (!results.length) {
+    const users = await sequelize.query(
+      `SELECT * FROM users WHERE (lower(name) LIKE '${firstCaracthers}%' )`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    const usersPerTags = await sequelize.query(
+      `SELECT * FROM users WHERE (lower(tag) LIKE '@${firstCaracthers}%' )`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    const posts = await sequelize.query(
+      `SELECT * FROM posts WHERE (lower(title) LIKE '${firstCaracthers}%' )`,
+      {
+        type: QueryTypes.SELECT,
+      }
+    );
+
+    console.log(users, posts, usersPerTags);
+
+    if (!users.length && !posts.length && !usersPerTags.length) {
       return { message: "No results found" };
     }
 
-    const response = [];
+    for (let i = 0; i < users.length; i++) {
+      const dist = levenshtein(queryLowerCase, users[i].name);
+      if (dist < 5 && users[i].id !== userId) {
+        const followers = JSON.parse(users[i].followers);
+        const following = JSON.parse(users[i].following);
 
-    for (let i = 0; i < results.length; i++) {
-      const posts = await results[i].getPosts();
-      posts.map((p) => {
-        p.dataValues.tags = JSON.parse(p.dataValues.tags);
-        p.dataValues.images = JSON.parse(p.dataValues.images);
-      });
-      const userData = results[i].dataValues;
-      response.push({
-        id: userData.id,
-        name: userData.name,
-        picture: userData.picture,
-        posts: posts,
-        followers: JSON.parse(userData.followers),
-        following: JSON.parse(userData.following),
-        tag: userData.tag,
-      });
+        const parseFollowers = followers.map((fol) => JSON.parse(fol));
+        const parsedFollowing = following.map((fol) => JSON.parse(fol));
+
+        usersResults.push({
+          id: users[i].id,
+          name: users[i].name,
+          picture: users[i].picture,
+          followers: parseFollowers,
+          following: parsedFollowing,
+          tag: users[i].tag,
+        });
+      }
     }
 
-    return response;
+    for (let i = 0; i < usersPerTags.length; i++) {
+      const dist = levenshtein(queryLowerCase, usersPerTags[i].tag);
+      const idxUser = usersResults
+        .map((user) => user.tag)
+        .indexOf(usersPerTags[i].tag);
+      if (dist < 5 && idxUser == -1 && usersPerTags[i].id !== userId) {
+        const followers = JSON.parse(usersPerTags[i].followers);
+        const following = JSON.parse(usersPerTags[i].following);
+
+        const parseFollowers = followers.map((fol) => JSON.parse(fol));
+        const parsedFollowing = following.map((fol) => JSON.parse(fol));
+
+        usersResults.push({
+          id: usersPerTags[i].id,
+          name: usersPerTags[i].name,
+          picture: usersPerTags[i].picture,
+          followers: parseFollowers,
+          following: parsedFollowing,
+          tag: usersPerTags[i].tag,
+        });
+      }
+    }
+
+    for (let j = 0; j < posts.length; j++) {
+      const dist = levenshtein(queryLowerCase, posts[j].title);
+      if (dist < 30) {
+        posts[j].tags = JSON.parse(posts[j].tags);
+        postsResults.push(posts[j]);
+      }
+    }
+
+    if (!usersResults.length && !postsResults.length)
+      return { message: "No results found" };
+
+    return {
+      users: usersResults,
+      posts: postsResults,
+    };
   },
   addPost: async ({ postInput }) => {
     const title = postInput.title;

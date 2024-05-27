@@ -8,20 +8,25 @@ module.exports = buildSchema(`
 
     type Message{
         message: String!
-        data: PostData
+        data: Post
+    }
+
+    type Search {
+        users: [User]
+        posts: [Post]
     }
 
     type User{
         id: Int
         name: String!
         picture: String
-        posts: [PostData]
+        posts: [Post]
         followers: [Follower!]
         following: [Follower!]
         tag: String
     }
 
-    type PostData{
+    type Post {
         author: User
         id: Int!
         title: String!
@@ -76,10 +81,10 @@ module.exports = buildSchema(`
 
     type RootQuery{
         getUser(id: Int!, token: String, route: String): User!
-        getPost(postId: Int!):PostData
+        getPost(postId: Int!):Post
         getComments(postId: Int): [Comment]
         login(email: String!, password: String!): AuthData!
-        search(query: String): [User]
+        search(query: String!, userId: Int): Search
     }
 
     type RootMutation {

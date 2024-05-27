@@ -1,54 +1,72 @@
 <template>
   <div class="page-body">
     <the-popup :content="popupMessage"></the-popup>
-    <div
-      class="search-result"
-      v-for="[index, result] in results.entries()"
-      :key="index"
-      @click="showProfile(result)"
-    >
-      <div class="result-info">
-        <div v-if="!result.picture" class="no-pic">
-          {{ result.name[0] }}
-        </div>
-        <div v-else class="img">
-          <img
-            :src="'http://localhost:3000/images/' + result.picture"
-            alt="profile-picture"
-          />
-        </div>
-        <div>
-          <div class="identifiers">
-            <h3>{{ result.name }}</h3>
-            <span>{{ result.tag }}</span>
+    <div v-if="results.users.length">
+      <div
+        class="search-result"
+        v-for="[index, result] in results.users.entries()"
+        :key="index"
+        @click="showProfile(result)"
+      >
+        <div class="result-info">
+          <div v-if="!result.picture" class="no-pic">
+            {{ result.name[0] }}
           </div>
+          <div v-else class="img">
+            <img
+              :src="'http://localhost:3000/images/' + result.picture"
+              alt="profile-picture"
+            />
+          </div>
+          <div>
+            <div class="identifiers">
+              <h3>{{ result.name }}</h3>
+              <span>{{ result.tag }}</span>
+            </div>
 
-          <span>{{ "Followers " + result.followers.length }}</span>
-          <span>{{ "Following " + result.following.length }}</span>
+            <span>{{ "Followers " + result.followers.length }}</span>
+            <span>{{ "Following " + result.following.length }}</span>
+          </div>
+        </div>
+
+        <div
+          v-if="user.following.map((fol) => fol.id).indexOf(result.id) !== -1"
+        >
+          <button @click="unfollow($event, result.id)" class="button-unfollow">
+            Unfollow
+          </button>
+        </div>
+        <div v-else>
+          <button @click="follow($event, result.id)" class="button-follow">
+            Follow
+          </button>
         </div>
       </div>
+    </div>
 
-      <div v-if="user.following.map((fol) => fol.id).indexOf(result.id) !== -1">
-        <button @click="unfollow($event, result.id)" class="button-unfollow">
-          Unfollow
-        </button>
-      </div>
-      <div v-else>
-        <button @click="follow($event, result.id)" class="button-follow">
-          Follow
-        </button>
-      </div>
+    <div v-if="results.posts.length">
+      <the-post-miniature
+        v-for="[index, result] in results.posts.entries()"
+        :key="index"
+        @click="showArticle(result)"
+        :post="result"
+      >
+      </the-post-miniature>
     </div>
   </div>
 </template>
 
 <script>
 import ThePopup from "../components/ThePopup.vue";
+import ThePostMiniature from "../components/ThePostMiniature.vue";
 
 export default {
   data() {
     return {
-      results: [],
+      results: {
+        users: [],
+        posts: [],
+      },
       popupMessage: {
         type: "",
         msg: "",
@@ -58,6 +76,7 @@ export default {
   },
   components: {
     ThePopup,
+    ThePostMiniature,
   },
   computed: {
     user() {
@@ -161,26 +180,22 @@ export default {
     },
     async fetchSearch() {
       const searchQuery = this.$route.query.q;
+      const userData = JSON.parse(localStorage.getItem("user"));
 
       const QUERY = {
         query: `
         {
-	      search(query: "${searchQuery}"){
-          id
-          picture
-          name
-          tag
-          followers {
-              id
-              name
-              picture
-              tag
-          }
-          following {
+	      search(query: "${searchQuery}", userId: ${userData?.id}){
+          users {
             id
             name
             picture
-            tag
+            followers {
+              name
+            }
+            following {
+              name
+            }
           }
           posts{
             id
@@ -229,6 +244,9 @@ export default {
     },
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
+    },
+    showArticle(article) {
+      this.$router.push("/article/" + article.id + "/" + article.title);
     },
   },
   mounted() {
