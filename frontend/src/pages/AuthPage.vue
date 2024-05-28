@@ -357,7 +357,7 @@ export default {
 
       localStorage.setItem(
         "user",
-        JSON.stringify({ ...responseData.data.signup })
+        JSON.stringify({ ...responseData.data.signup, tag: "" })
       );
 
       this.$router.push({ path: "/welcome" });

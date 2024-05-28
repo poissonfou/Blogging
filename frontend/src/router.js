@@ -82,9 +82,9 @@ const router = createRouter({
         const { token } = JSON.parse(localStorage.getItem("user"));
 
         if (token && token.length) {
-          next(false);
-        } else {
           next(true);
+        } else {
+          next(false);
         }
       },
     },
@@ -98,9 +98,10 @@ const router = createRouter({
           !JSON.parse(localStorage.getItem("user"))
         )
           return next(false);
-        const { token } = JSON.parse(localStorage.getItem("user"));
+        const token = JSON.parse(localStorage.getItem("user"))?.token;
+        const tag = JSON.parse(localStorage.getItem("user"))?.tag;
 
-        if (token && token.length) {
+        if (token && token.length && tag && tag.length) {
           next(true);
         } else {
           next(false);

@@ -10,7 +10,7 @@
       <section class="content" id="content">
         <div class="content-inner-container">
           <div
-            v-if="tab == 'posts' || tab == 'filtered-post'"
+            v-if="tab == 'posts' || tab == 'filtered-posts'"
             class="header-content"
           >
             <div @click="changeTab('add-post')" class="add-post">
@@ -23,8 +23,14 @@
               <span>{{ `Articles: ` + this.user.posts.length }}</span>
             </div>
           </div>
-          <div v-if="tab == 'feed'">
-            <h1>WEE</h1>
+          <div v-if="tab == 'feed'" class="feed">
+            <the-post-miniature
+              v-for="[index, post] in feed.entries()"
+              :key="index"
+              :post="post"
+              @click="showPost(post.id, post.title)"
+            >
+            </the-post-miniature>
           </div>
           <div v-if="tab == 'posts'" class="posts">
             <the-post-miniature
@@ -33,7 +39,7 @@
               :post="post"
               :edit="showEdit"
               :deletion="showDelete"
-              @click="showPost(post.id)"
+              @click="showPost(post.id, post.title)"
             >
             </the-post-miniature>
           </div>
@@ -44,7 +50,7 @@
               :post="post"
               :edit="showEdit"
               :deletion="deletePost"
-              @click="showPost(post.id)"
+              @click="showPost(post.id, post.title)"
             >
             </the-post-miniature>
           </div>
@@ -220,6 +226,7 @@ export default {
     return {
       filteredPosts: [],
       tagsUserArticles: [],
+      feed: [],
       tab: "posts",
       selectedPost: null,
       displayConnections: null,
@@ -341,10 +348,64 @@ export default {
       this.following = JSON.parse(JSON.stringify(user.following));
       this.$store.commit("setUser", user);
     },
+    async fetchFeed() {
+      const { token } = JSON.parse(localStorage.getItem("user"));
+
+      const QUERY = {
+        query: `
+          {
+	          getFeed(token: "${token}") {
+              data {
+                id
+                tags
+                title
+                abstract
+              }
+            }
+          }
+        `,
+      };
+
+      let response;
+
+      try {
+        response = await fetch("http://localhost:3000/graphql", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(QUERY),
+        });
+      } catch (e) {
+        this.popupMessage = {
+          type: "error",
+          msg: "Couldn't connect to server. Please reload",
+          data: null,
+        };
+        return;
+      }
+
+      const data = await response.json();
+
+      if (data.errors) {
+        this.popupMessage = {
+          type: "error",
+          msg: data.errors[0].message,
+          data: null,
+        };
+        return;
+      }
+
+      this.feed = data.data.getFeed.data;
+      console.log(data.data.getFeed.data);
+    },
     updateUser(newUser) {
       this.$store.commit("setUser", newUser);
     },
-    changeTab(tab) {
+    async changeTab(tab) {
+      if (this.tab !== "feed" && tab == "feed") {
+        await this.fetchFeed();
+      }
       this.tab = tab;
     },
     async addPost(event) {
@@ -668,17 +729,12 @@ export default {
       this.filteredPosts = posts;
       this.tab = "filtered-posts";
     },
-    showPost(id) {
-      const postIdx = this.user.posts.map((p) => p.id).indexOf(id);
-      const post = this.user.posts[postIdx];
-      this.$router.push("/article/" + id + "/" + post.title);
+    showPost(id, title) {
+      this.$router.push("/article/" + id + "/" + title);
     },
     showConnections(tab) {
       if (this.displayConnections == tab) {
         this.displayConnections = null;
-        this.storeUpdates.forEach((update) => {
-          this.$store.commit(update.action, update.data);
-        });
         return;
       }
       this.displayConnections = tab;
@@ -909,7 +965,8 @@ export default {
 }
 
 .posts,
-.search {
+.search,
+.feed {
   padding: 0em 1em;
   padding-top: 0.5em;
   text-align: start;
@@ -918,17 +975,20 @@ export default {
 }
 
 .posts::-webkit-scrollbar,
-.search::-webkit-scrollbar {
+.search::-webkit-scrollbar,
+.feed::-webkit-scrollbar {
   display: block;
 }
 
 .posts::-webkit-scrollbar-track,
-.search::-webkit-scrollbar-track {
+.search::-webkit-scrollbar-track,
+.feed::-webkit-scrollbar-track {
   background-color: transparent;
 }
 
 .posts::-webkit-scrollbar-thumb,
-.search::-webkit-scrollbar-thumb {
+.search::-webkit-scrollbar-thumb,
+.feed::-webkit-scrollbar-track {
   background: rgb(15, 15, 15);
   border-radius: 10px;
   border: solid white 3px;

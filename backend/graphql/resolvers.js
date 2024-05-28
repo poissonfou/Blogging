@@ -67,7 +67,7 @@ module.exports = {
       { expiresIn: "3h" }
     );
 
-    return { token, id: user[0].dataValues.id };
+    return { token, id: user[0].dataValues.id, tag: user[0].dataValues.tag };
   },
   signup: async ({ signupInput }) => {
     let errorMessage;
@@ -134,7 +134,7 @@ module.exports = {
       { expiresIn: "3h" }
     );
 
-    return { token, id: newUser.id };
+    return { token, id: newUser.id, tag: "" };
   },
   update: async ({ name, password, confirm, token }) => {
     const nameVal = name;
@@ -271,6 +271,44 @@ module.exports = {
       ...post.dataValues,
     };
   },
+  getFeed: async ({ token }) => {
+    const filteredPosts = [];
+    const userId = authenticateUserGraphQL(token);
+
+    const user = await User.findByPk(userId);
+    user.following = JSON.parse(user.following);
+
+    const currentDate = new Date();
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const dateFormat = new Intl.DateTimeFormat("pt-BR", { timeZone: tz });
+
+    //gets posts of the one's the user follows, they are at most five days old.
+    if (user.following.length) {
+      user.following = user.following.map((fol) => JSON.parse(fol));
+
+      for (let i = 0; i < user.following.length; i++) {
+        const follow = await User.findByPk(+user.following[i].id);
+        const posts = await follow.getPosts();
+
+        for (let j = 0; j < posts.length; j++) {
+          const postDate = new Date(+posts[j].createdAt);
+          const formatedDate = dateFormat.format(postDate);
+          const DateElements = formatedDate.split("/");
+          if (
+            DateElements[2] == currentDate.getFullYear() &&
+            currentDate.getDate() - 5 <= DateElements[0]
+          ) {
+            posts[j].tags = JSON.parse(posts[j].tags);
+            filteredPosts.push(posts[j].dataValues);
+          }
+        }
+      }
+    }
+
+    console.log(filteredPosts);
+
+    return { data: filteredPosts };
+  },
   getComments: async ({ postId }) => {
     const post = await Post.findByPk(postId);
 
@@ -324,8 +362,6 @@ module.exports = {
         type: QueryTypes.SELECT,
       }
     );
-
-    console.log(users, posts, usersPerTags);
 
     if (!users.length && !posts.length && !usersPerTags.length) {
       return { message: "No results found" };

@@ -11,7 +11,7 @@
           >{{ tag }}</span
         >
       </div>
-      <div class="btn" v-if="this.$route.path == '/dashboard'">
+      <div class="btn" v-if="edit && deletion">
         <button @click="edit($event, post)">Edit</button>
         <button @click="deletion($event, post.id)" class="delete">
           Delete

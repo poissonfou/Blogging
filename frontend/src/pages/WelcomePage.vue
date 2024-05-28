@@ -109,6 +109,10 @@ export default {
         return;
       }
 
+      const userLocal = JSON.parse(localStorage.getItem("user"));
+      userLocal.tag = userTag;
+      localStorage.setItem("user", JSON.stringify(userLocal));
+
       this.$router.push("/dashboard");
     },
     preview(event) {

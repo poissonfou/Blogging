@@ -4,11 +4,16 @@ module.exports = buildSchema(`
     type AuthData{
         token: String!
         id: Int!
+        tag: String!
     }
 
     type Message{
         message: String!
         data: Post
+    }
+
+    type Feed {
+        data: [Post]
     }
 
     type Search {
@@ -83,6 +88,7 @@ module.exports = buildSchema(`
         getUser(id: Int!, token: String, route: String): User!
         getPost(postId: Int!):Post
         getComments(postId: Int): [Comment]
+        getFeed(token: String): Feed
         login(email: String!, password: String!): AuthData!
         search(query: String!, userId: Int): Search
     }
