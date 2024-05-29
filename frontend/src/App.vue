@@ -1,11 +1,9 @@
 <template>
-  <div>
-    <div id="wrapper">
-      <the-header :user="user" :logout="logout"></the-header>
-      <main id="main">
-        <router-view></router-view>
-      </main>
-    </div>
+  <div id="wrapper">
+    <the-header :user="user" :logout="logout"></the-header>
+    <main>
+      <router-view></router-view>
+    </main>
     <div class="notifications">
       <the-notification
         v-for="notif in notifications"
@@ -127,10 +125,6 @@ body::-webkit-scrollbar-thumb {
 #app,
 html {
   height: 100%;
-}
-
-#main {
-  height: 89.9%;
 }
 
 .notifications {

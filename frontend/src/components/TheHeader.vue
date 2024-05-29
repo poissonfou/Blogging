@@ -4,7 +4,7 @@
       <h1>Blogging</h1>
     </router-link>
 
-    <nav v-if="!user">
+    <nav v-if="!user" class="nav-loged-off">
       <router-link to="/auth?mode=login">Login</router-link>
       <router-link to="/auth?mode=signup">Signup</router-link>
     </nav>
@@ -69,11 +69,18 @@ a {
   text-decoration: none;
 }
 
-nav a {
+.nav-loged-off a {
   font-family: "Zilla Slab", serif;
   margin-right: 2em;
   font-size: 1.5rem;
   color: white;
+}
+
+@media (max-width: 500px) {
+  .nav-loged-off a {
+    margin-right: 1em;
+    font-size: 1.3rem;
+  }
 }
 
 input {

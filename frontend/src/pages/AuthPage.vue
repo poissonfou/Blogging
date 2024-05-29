@@ -1,7 +1,7 @@
 <template>
   <div>
     <the-popup :content="popupMessage"></the-popup>
-    <div v-if="route == 'login'" class="auth-body">
+    <div v-if="route == 'login'" class="auth-body login">
       <div class="header">
         <h1>Login</h1>
         <span v-if="errorMsg.msg" class="error-msg">{{ errorMsg.msg }}</span>
@@ -141,6 +141,13 @@ export default {
       return this.$route.query.mode;
     },
   },
+  watch: {
+    route() {
+      if (this.errorMsg.msg) {
+        this.errorMsg = { field: "", msg: null };
+      }
+    },
+  },
   methods: {
     validate(field) {
       if (field == "name") {
@@ -243,6 +250,7 @@ export default {
              login(email: "${email}", password: "${password}"){
               token
               id
+              tag
             }
           }
         `,
@@ -485,6 +493,65 @@ export default {
   align-items: center;
 }
 
+@media (max-width: 900px) {
+  .auth-body {
+    width: 40em;
+  }
+
+  form div input {
+    width: 15em;
+  }
+
+  .auth-body img {
+    width: 18em;
+  }
+}
+
+@media (max-width: 700px) {
+  .auth-body {
+    width: 37em;
+  }
+
+  form div input {
+    width: 13em;
+  }
+
+  form div label {
+    font-size: 1.4rem;
+  }
+
+  button {
+    font-size: 1.2em;
+  }
+
+  .auth-body img {
+    width: 16em;
+  }
+}
+
+@media (max-width: 650px) {
+  .auth-body {
+    width: auto;
+    margin: 0em 1em;
+  }
+
+  .login h1 {
+    margin-bottom: 1em;
+  }
+
+  form {
+    padding: 0em 1.5em;
+  }
+
+  form div input {
+    width: 100%;
+  }
+
+  .auth-body img {
+    display: none;
+  }
+}
+
 .header {
   display: flex;
   align-items: center;
@@ -503,6 +570,15 @@ export default {
   font-size: 1.2rem;
   margin-left: 0.5em;
   margin-top: 1em;
+}
+
+@media (max-width: 600px) {
+  .error-msg {
+    font-family: "Pridi", serif;
+    font-size: 1rem;
+    margin-left: 0.5em;
+    margin-top: 1em;
+  }
 }
 
 .error {

@@ -2,7 +2,7 @@
   <div>
     <the-popup :content="popupMessage"></the-popup>
     <div class="page">
-      <section class="img-box-hero">
+      <section class="hero-section">
         <img src="/images/hero_img.avif" alt="illustration" />
         <div>
           <h1>Write and share your vision with the world.</h1>
@@ -50,7 +50,7 @@
           </ul>
 
           <div class="articles-display">
-            <div
+            <article
               v-for="[index, article] in articles[selectedTopic].entries()"
               :key="index"
               :class="
@@ -66,7 +66,7 @@
                 <span>{{ article.author }}</span>
                 <img :src="article.urlProfile" alt="profile picture" />
               </div>
-            </div>
+            </article>
           </div>
         </div>
       </section>
@@ -141,7 +141,7 @@
         </div>
       </section>
 
-      <section class="credit">
+      <footer class="credit">
         <p>Emerson Lima | 2024</p>
 
         <div>
@@ -153,7 +153,7 @@
             ><i class="bi bi-linkedin"></i
           ></a>
         </div>
-      </section>
+      </footer>
     </div>
   </div>
 </template>
@@ -468,7 +468,6 @@ export default {
 
 <style scoped>
 .page {
-  position: relative;
   border: solid 3px rgb(0, 0, 0);
   border-bottom: none;
   border-top-right-radius: 10px;
@@ -489,12 +488,58 @@ export default {
   font-size: 2rem;
 }
 
-.img-box-hero {
+@media (max-width: 1300px) {
+  .page h1 {
+    font-size: 2.5rem;
+  }
+
+  .page p {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .page {
+    margin: 0em 2em;
+    margin-top: 2em;
+  }
+}
+
+@media (max-width: 900px) {
+  .page {
+    margin: 0em 1em;
+    margin-top: 2em;
+    padding: 2em 3em;
+  }
+
+  .page h1 {
+    font-size: 2rem;
+  }
+
+  .page p {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 700px) {
+  .page {
+    padding: 2em 1em;
+  }
+
+  .hero-section h1 {
+    margin: 0;
+  }
+
+  .hero-section img {
+    display: none;
+  }
+}
+
+.hero-section {
   display: flex;
 }
 
 img {
-  display: block;
   width: 50%;
   margin: 0 auto;
 }
@@ -530,19 +575,16 @@ ul li:hover {
 }
 
 .selected {
-  border-radius: 20px;
+  border-radius: 10px;
+  border: solid 2px black;
   background: rgb(53, 219, 109);
-  background: linear-gradient(
-    90deg,
-    rgb(53, 219, 109) 0%,
-    rgba(183, 251, 169, 1) 100%
-  );
+  box-shadow: -2px 2px 0px black;
 }
 
 .articles-display {
   position: relative;
   display: flex;
-  padding: 0.5em 1em;
+  padding: 0.5em 0em;
   border: solid 3px black;
   border-bottom: none;
   border-top-left-radius: 10px;
@@ -554,42 +596,115 @@ ul li:hover {
 .articles-display div h3 {
   font-size: 2.5rem;
   margin: 0;
+  width: 100%;
   font-family: "Pridi", serif;
-  width: 16em;
   text-overflow: ellipsis;
   overflow: hidden;
   white-space: nowrap;
+  padding: 0em 0.2em;
 }
 
 .articles-display div p {
   font-size: 1.7rem;
   height: 5em;
-  width: 23.5em;
-  text-overflow: ellipsis;
-  overflow: hidden;
+  width: 100%;
+  white-space: wrap;
+  padding: 0em 0.5em;
 }
 
 .article {
   position: absolute;
   opacity: 1;
   transition: opacity 1s;
+  width: 100%;
 }
 
 .author-info-box {
   display: flex;
   align-items: center;
   justify-content: end;
-  margin-right: 2em;
+  padding: 0em 0.5em;
 }
 
 .author-info-box img {
-  display: inline-block;
-  width: 4em;
-  height: 4em;
+  width: 3.5em;
+  height: 3.5em;
   border-radius: 10em;
   margin: 0em;
   object-fit: cover;
   margin-left: 0.5em;
+}
+
+@media (max-width: 1300px) {
+  ul {
+    font-size: 1.3rem;
+  }
+
+  .articles-display {
+    width: 35em;
+    height: 15em;
+  }
+
+  .articles-display div h3 {
+    font-size: 2rem;
+  }
+
+  .articles-display div p {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 1100px) {
+  .articles-display {
+    width: 30em;
+    height: 15em;
+  }
+}
+
+@media (max-width: 900px) {
+  .topics {
+    display: flex;
+    flex-direction: column;
+  }
+
+  ul {
+    display: flex;
+    justify-content: space-around;
+    font-size: 1.3rem;
+    width: 100%;
+  }
+
+  .articles-display {
+    width: 100%;
+    height: 15em;
+  }
+}
+
+@media (max-width: 700px) {
+  ul {
+    margin-left: -1.5em;
+  }
+
+  .articles-display div h3 {
+    font-size: 1.8rem;
+  }
+
+  .articles-display div p {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 500px) {
+  ul {
+    margin-left: -2.5em;
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 400px) {
+  ul {
+    margin-left: -4em;
+  }
 }
 
 .hidden {
@@ -618,17 +733,89 @@ ul li:hover {
   cursor: pointer;
 }
 
+@media (max-width: 1300px) {
+  .ai span {
+    font-size: 1rem;
+  }
+}
+
 .signup h1 {
-  margin-bottom: 0;
+  margin-bottom: -0.3em;
 }
 
 .signup-content {
   display: flex;
   align-items: center;
+  justify-content: space-between;
 }
 
-.signup-content img {
-  height: 25em;
+@media (max-width: 1300px) {
+  form div input {
+    font-size: 1.2rem;
+    width: 15em;
+  }
+
+  form div label {
+    font-size: 1.3rem;
+  }
+
+  form button {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 900px) {
+  form div input {
+    width: 15em;
+  }
+
+  form div label {
+    font-size: 1.2rem;
+  }
+
+  form button {
+    font-size: 1.2rem;
+  }
+
+  form span {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 800px) {
+  .signup-content img {
+    display: none;
+  }
+
+  form div input {
+    width: 23em;
+  }
+
+  form div label {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 700px) {
+  form div input {
+    width: 18em;
+  }
+
+  form div label {
+    font-size: 1.3rem;
+  }
+}
+
+@media (max-width: 500px) {
+  form div input {
+    width: 16em;
+  }
+}
+
+@media (max-width: 400px) {
+  form div input {
+    width: 14em;
+  }
 }
 
 .credit {
