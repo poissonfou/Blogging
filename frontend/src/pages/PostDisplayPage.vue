@@ -1,5 +1,5 @@
 <template>
-  <div class="display-body">
+  <div class="post-body">
     <the-popup :content="popupMessage"></the-popup>
     <div class="header">
       <h1>{{ post.title }}</h1>
@@ -429,7 +429,7 @@ export default {
 </script>
 
 <style scoped>
-.display-body {
+.post-body {
   background-color: white;
   border: solid 3px black;
   border-bottom: none;
@@ -437,11 +437,21 @@ export default {
   border-top-left-radius: 10px;
   margin: 0em 5em;
   margin-top: 2em;
-  padding: 0.5em 3em;
+  padding: 0.5em 2em;
 }
 
-.header {
-  padding: 0em 2em;
+@media (max-width: 1000px) {
+  .post-body {
+    margin: 0em 2em;
+    margin-top: 2em;
+  }
+}
+
+@media (max-width: 650px) {
+  .post-body {
+    margin: 0em 1em;
+    margin-top: 2em;
+  }
 }
 
 .header h1 {
@@ -504,6 +514,7 @@ export default {
 }
 
 .tag {
+  display: inline-block;
   margin-right: 0.3em;
   background: rgb(64, 89, 173);
   border: solid 2px black;
@@ -515,13 +526,13 @@ export default {
 }
 
 #body {
-  padding: 1em 1.5em;
+  padding: 1em 0em;
   font-family: "Zilla Slab", serif;
   font-size: 1.5rem;
+  word-wrap: break-word;
 }
 
 .new-comment {
-  padding: 0em 2em;
   margin-top: 5em;
 }
 
@@ -533,12 +544,9 @@ export default {
   font-family: "Zilla Slab", serif;
 }
 
-.comments {
-  padding: 1.7em;
-}
-
 .comments h1 {
   font-family: "Pridi", serif;
+  margin-bottom: 0;
 }
 
 .comment {
@@ -565,7 +573,7 @@ export default {
 .no-pic-comment {
   background-color: rgb(46, 190, 94);
   width: fit-content;
-  padding: 0.3rem 0.8em;
+  padding: 0.5rem 0.8em;
   border-radius: 5em;
   color: white;
   font-size: 1.2rem;
@@ -605,6 +613,75 @@ export default {
   display: flex;
   align-items: center;
   margin-top: 1em;
+}
+
+@media (max-width: 800px) {
+  .post-body {
+    padding: 0.5em 0.8em;
+  }
+
+  .header h1 {
+    font-size: 2.7rem;
+  }
+
+  .header h3 {
+    font-size: 1.5rem;
+  }
+
+  .author-info span {
+    font-size: 1rem;
+  }
+
+  .no-pic {
+    background-color: rgb(46, 190, 94);
+    width: fit-content;
+    padding: 0.3rem 0.8em;
+    border-radius: 5em;
+    color: white;
+    font-size: 1.2rem;
+    font-family: "Pridi", serif;
+    margin-top: 0.2em;
+  }
+
+  .img img {
+    width: 2.5em;
+    height: 2.5em;
+  }
+
+  .tag {
+    font-size: 0.8rem;
+  }
+
+  #body {
+    font-size: 1.3rem;
+  }
+
+  .new-comment label {
+    font-size: 1.3rem;
+  }
+
+  .new-comment button {
+    font-size: 1.3rem;
+  }
+
+  .comments h1 {
+    font-size: 2rem;
+  }
+
+  .no-pic-comment {
+    padding: 0.4rem 0.8em;
+  }
+
+  .comment-content {
+    font-size: 1.1rem;
+  }
+}
+
+@media (max-width: 500px) {
+  .header h1 {
+    font-size: 2.5rem;
+    word-wrap: break-word;
+  }
 }
 
 .buttons .material-symbols-outlined:hover {

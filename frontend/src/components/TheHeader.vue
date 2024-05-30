@@ -2,7 +2,7 @@
   <header>
     <router-link :to="user ? '/dashboard' : '/'">
       <h1 v-if="!adjustDisplay">Blogging</h1>
-      <h1 v-else>B</h1>
+      <h1 v-else class="collapsed-logo">B</h1>
     </router-link>
 
     <nav v-if="!user" class="nav-loged-off">
@@ -89,6 +89,10 @@ header div {
 header div a {
   margin: 0;
   margin-left: 0.5em;
+}
+
+.collapsed-logo {
+  font-size: 2.5rem;
 }
 
 h1 {
