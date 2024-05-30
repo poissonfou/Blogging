@@ -147,10 +147,6 @@ input {
 }
 
 @media (max-width: 500px) {
-  input {
-    width: 7em;
-  }
-
   .nav-loged-off a {
     margin-right: 1em;
     font-size: 1.3rem;

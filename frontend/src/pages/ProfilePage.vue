@@ -1,9 +1,9 @@
 <template>
-  <main>
+  <div>
     <the-popup :content="popupMessage"></the-popup>
     <div class="profile-body">
-      <div class="info">
-        <div>
+      <div class="profile-header">
+        <div class="info">
           <div v-if="!user.picture" class="no-pic">{{ user.name[0] }}</div>
           <div v-else class="img">
             <img
@@ -11,7 +11,7 @@
               alt="user picture"
             />
           </div>
-          <div class="text-box">
+          <div>
             <div class="user-identifiers">
               <h1>{{ user.name }}</h1>
               <span>{{ user.tag }}</span>
@@ -23,6 +23,24 @@
           </div>
         </div>
 
+        <div v-if="!adjustDisplay">
+          <div
+            v-if="
+              loggedUser.following.map((fol) => fol.id).indexOf(user.id) !== -1
+            "
+          >
+            <button @click="unfollow(user.id)" class="button-unfollow">
+              Unfollow
+            </button>
+          </div>
+          <div v-else>
+            <button @click="follow(user.id)" class="button-follow">
+              Follow
+            </button>
+          </div>
+        </div>
+      </div>
+      <div v-if="adjustDisplay" class="btn-adjusted">
         <div
           v-if="
             loggedUser.following.map((fol) => fol.id).indexOf(user.id) !== -1
@@ -45,7 +63,7 @@
         ></the-post-miniature>
       </div>
     </div>
-  </main>
+  </div>
 </template>
 
 <script>
@@ -68,6 +86,7 @@ export default {
         following: [],
       },
       tagsUserArticles: [],
+      adjustDisplay: false,
       filteredPosts: [],
       popupMessage: { type: "", msg: null, data: null },
     };
@@ -213,7 +232,7 @@ export default {
       const QUERY = {
         query: `
             mutation{
-              unfollow(id: ${id}, token: "${token}")"{
+              unfollow(id: ${id}, token: "${token}"){
                 message
               }
             }
@@ -261,39 +280,50 @@ export default {
   },
   mounted() {
     this.fetchUser();
+    window.addEventListener("resize", () => {
+      if (window.innerWidth <= 650 && !this.adjustDisplay) {
+        this.adjustDisplay = true;
+      }
+      if (window.innerWidth > 650 && this.adjustDisplay) {
+        this.adjustDisplay = false;
+      }
+    });
+
+    if (window.innerWidth <= 650 && !this.adjustDisplay) {
+      this.adjustDisplay = true;
+    }
+    if (window.innerWidth > 650 && this.adjustDisplay) {
+      this.adjustDisplay = false;
+    }
   },
 };
 </script>
 
 <style scoped>
-main {
-  height: 100%;
-}
-
 .profile-body {
   background-color: white;
   border: solid 3px black;
   border-bottom: none;
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
+  height: 100vh;
   margin: 0em 5em;
   margin-top: 2em;
-  height: 100%;
   padding: 0.5em 3em;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
 }
 
-.text-box {
-  margin-left: 2em;
-}
-
-.info {
+.profile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
-.info div:first-child {
+.info {
   display: flex;
+  gap: 2em;
 }
 
 .user-identifiers {
@@ -302,13 +332,13 @@ main {
 }
 
 .user-identifiers span {
-  margin-left: 0.5em;
   font-family: "Zilla Slab", serif;
+  margin-left: 0.5em;
   font-size: 1.5rem;
   color: rgb(53, 219, 109);
 }
 
-.info h1 {
+.profile-header h1 {
   font-family: "Pridi", serif;
   font-size: 3rem;
   margin: 0;
@@ -362,7 +392,7 @@ main {
   border: solid 2px black;
   border-radius: 5px;
   background-color: rgb(53, 219, 109);
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   padding: 0.3em 1em;
   font-family: "Zilla Slab", serif;
   box-shadow: 2px 2px 0px black;
@@ -373,13 +403,124 @@ main {
   cursor: pointer;
 }
 
+.btn-adjusted {
+  display: flex;
+  justify-content: end;
+}
+
+@media (max-width: 1000px) {
+  .profile-body {
+    margin: 0em 2em;
+    margin-top: 2em;
+  }
+
+  .profile-header h1 {
+    font-size: 2.5rem;
+  }
+
+  .img img {
+    width: 6em;
+    height: 6em;
+  }
+
+  .button-follow {
+    font-size: 1.3rem;
+    padding: 0.3em 1.3em;
+  }
+
+  .button-unfollow {
+    font-size: 1.3rem;
+    padding: 0.3em 1.2em;
+  }
+}
+
+@media (max-width: 800px) {
+  .profile-body {
+    margin: 0em 1em;
+    margin-top: 2em;
+    padding: 1em 1em;
+  }
+
+  .profile-header h1 {
+    font-size: 2.2rem;
+  }
+
+  .info {
+    gap: 1.5em;
+  }
+
+  .user-identifiers span {
+    font-size: 1.2rem;
+  }
+
+  .account-metrics span {
+    font-size: 1rem;
+  }
+
+  .img img {
+    width: 5.5em;
+    height: 5.5em;
+  }
+}
+
+@media (max-width: 650px) {
+  .profile-body {
+    padding: 1em 0.5em;
+  }
+
+  .profile-header h1 {
+    font-size: 1.8rem;
+  }
+
+  .info {
+    gap: 1em;
+  }
+
+  .user-identifiers {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .user-identifiers span {
+    font-size: 1rem;
+  }
+
+  .img img {
+    width: 4.5em;
+    height: 4.5em;
+  }
+
+  .button-follow {
+    font-size: 1.2rem;
+    padding: 0.3em 1.3em;
+  }
+
+  .button-unfollow {
+    font-size: 1.2rem;
+    padding: 0.3em 1.2em;
+  }
+}
+
+@media (max-width: 500px) {
+  .user-identifiers {
+    flex-direction: row;
+    align-items: center;
+  }
+
+  .img {
+    padding: 0.3em;
+    padding-bottom: 0em;
+    height: 4.8em;
+  }
+}
+
 .posts {
   margin-top: 3em;
   padding: 0em 1em;
   padding-top: 0.5em;
   text-align: start;
-  height: 22em;
-  overflow-y: scroll;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 .posts::-webkit-scrollbar {

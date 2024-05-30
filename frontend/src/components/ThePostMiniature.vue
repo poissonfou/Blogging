@@ -92,6 +92,16 @@ export default {
   margin-right: 0.5em;
 }
 
+@media (max-width: 650px) {
+  .post-miniature h2 {
+    font-size: 1.8rem;
+  }
+
+  .post-miniature p {
+    font-size: 1.3rem;
+  }
+}
+
 .delete {
   background-color: rgb(230, 10, 10);
 }
