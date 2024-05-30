@@ -23,11 +23,14 @@
             <label for="picture">Choose a profile picture</label>
             <input type="file" name="picture" id="picture" @change="preview" />
           </div>
-          <button>Done</button>
+          <button v-if="!changeButtonDisplay">Done</button>
         </the-form>
         <div class="img-box">
           <h2 id="no-img-msg">Choose an image</h2>
           <img src="" id="image-preview" class="hidden" />
+        </div>
+        <div v-if="changeButtonDisplay" class="alternative-btn-display">
+          <button @click="saveTagAndImage">Done</button>
         </div>
       </div>
     </div>
@@ -48,6 +51,7 @@ export default {
       errorMsg: { field: "", msg: null },
       tag: "",
       popupMessage: { type: "", msg: "", data: null },
+      changeButtonDisplay: false,
     };
   },
   methods: {
@@ -60,7 +64,7 @@ export default {
       if (this.errorMsg.msg) this.errorMsg = { field: "", msg: null };
     },
     async saveTagAndImage(event) {
-      event.preventDefault();
+      if (event) event.preventDefault();
       const form = new FormData();
       const picture = document.forms["form"]["picture"].files[0];
       const userTag = document.getElementById("userTag").value.trim();
@@ -127,6 +131,23 @@ export default {
       }
     },
   },
+  mounted() {
+    window.addEventListener("resize", () => {
+      if (window.innerWidth <= 650 && !this.changeButtonDisplay) {
+        this.changeButtonDisplay = true;
+      }
+      if (window.innerWidth > 650 && this.changeButtonDisplay) {
+        this.changeButtonDisplay = false;
+      }
+    });
+
+    if (window.innerWidth <= 650 && !this.changeButtonDisplay) {
+      this.changeButtonDisplay = true;
+    }
+    if (window.innerWidth > 650 && this.changeButtonDisplay) {
+      this.changeButtonDisplay = false;
+    }
+  },
 };
 </script>
 
@@ -156,6 +177,27 @@ h1 span {
   border-top-right-radius: 10px;
   border: solid 3px black;
   border-bottom: none;
+}
+
+.alternative-btn-display {
+  display: flex;
+  justify-content: end;
+}
+
+.auth-body button {
+  border: solid 2px black;
+  border-radius: 5px;
+  box-shadow: -2px 2px 0px black;
+  padding: 0.1em 1.3em;
+  width: fit-content;
+  font-family: "Pridi", serif;
+  font-size: 1.5rem;
+  margin-top: 0.5em;
+  background-color: rgb(53, 219, 109);
+}
+
+.auth-body button:hover {
+  cursor: pointer;
 }
 
 .flex-container {
@@ -194,6 +236,88 @@ h1 span {
   border-radius: 3px;
   object-fit: cover;
   width: 100%;
+}
+
+@media (max-width: 900px) {
+  .auth-body {
+    width: 40em;
+  }
+
+  .auth-body h1 {
+    font-size: 2.5rem;
+  }
+
+  .auth-body input {
+    width: 15em;
+  }
+
+  .img-box h2 {
+    margin-top: 50%;
+  }
+}
+
+@media (max-width: 700px) {
+  .auth-body {
+    width: 37em;
+  }
+
+  .auth-body label {
+    font-size: 1.2rem;
+  }
+
+  .auth-body input {
+    width: 12em;
+  }
+
+  button {
+    font-size: 1.2em;
+  }
+
+  .img-box img {
+    width: 16em;
+  }
+}
+
+@media (max-width: 650px) {
+  .flex-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .auth-body {
+    width: auto;
+    margin: 0em 1em;
+    top: 8em;
+    height: fit-content;
+  }
+
+  .auth-body h1 {
+    margin-bottom: 1.5em;
+  }
+
+  .auth-body input {
+    width: 18em;
+  }
+
+  .img-box {
+    width: auto;
+    height: 15em;
+    margin: 0;
+  }
+
+  .img-box h2 {
+    margin-top: 25%;
+  }
+}
+
+@media (max-width: 500px) {
+  .auth-body h1 {
+    font-size: 2.5rem;
+  }
+
+  .auth-body input {
+    width: 100%;
+  }
 }
 
 .hidden {
