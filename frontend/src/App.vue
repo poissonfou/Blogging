@@ -100,6 +100,10 @@ export default {
 </script>
 
 <style>
+html {
+  height: 100%;
+}
+
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
@@ -121,10 +125,18 @@ body::-webkit-scrollbar-thumb {
   border: solid rgb(53, 219, 109) 3px;
 }
 
-#wrapper,
-#app,
-html {
+#app {
   height: 100%;
+}
+
+#wrapper {
+  display: flex;
+  flex-flow: column;
+  height: 100%;
+}
+
+main {
+  flex: 1 1 auto;
 }
 
 .notifications {

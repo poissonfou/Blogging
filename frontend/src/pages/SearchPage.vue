@@ -190,6 +190,7 @@ export default {
             id
             name
             picture
+            tag
             followers {
               name
             }
@@ -286,7 +287,7 @@ export default {
 .result-info {
   display: flex;
   align-items: center;
-  gap: 2em;
+  gap: 1em;
 }
 
 .result-info h3 {
@@ -312,10 +313,11 @@ export default {
 .no-pic {
   background-color: rgb(46, 190, 94);
   width: fit-content;
-  padding: 0.5em 1em;
+  padding: 0.4em 0.8em;
   border-radius: 5em;
   font-size: 1.8rem;
   font-family: "Pridi", serif;
+  color: white;
 }
 
 .img {
@@ -323,7 +325,6 @@ export default {
   padding: 0.3em;
   padding-bottom: 0em;
   border-radius: 100%;
-  color: white;
   margin-top: 0.2em;
 }
 
@@ -352,6 +353,58 @@ export default {
   padding: 0.3em 1em;
   font-family: "Zilla Slab", serif;
   box-shadow: 2px 2px 0px black;
+}
+
+@media (max-width: 700px) {
+  .page-body {
+    margin: 0em 1em;
+    margin-top: 4em;
+    padding: 0.5em 1em;
+  }
+
+  .button-follow {
+    font-size: 1.1rem;
+    padding: 0.3em 1.5em;
+  }
+
+  .button-unfollow {
+    font-size: 1.1rem;
+    padding: 0.3em 1em;
+  }
+}
+
+@media (max-width: 500px) {
+  .page-body {
+    margin: 0em 0.5em;
+    margin-top: 4em;
+    padding: 0.5em;
+  }
+
+  .no-pic {
+    padding: 0.4em 0.8em;
+    border-radius: 5em;
+    font-size: 1.2rem;
+  }
+
+  .result-info {
+    gap: 0.5em;
+  }
+
+  .result-info h3 {
+    font-size: 1.3rem;
+  }
+
+  .identifiers span {
+    font-size: 1rem;
+  }
+
+  .button-follow {
+    font-size: 0.9rem;
+  }
+
+  .button-unfollow {
+    font-size: 0.9rem;
+  }
 }
 
 .search-result button:hover {
