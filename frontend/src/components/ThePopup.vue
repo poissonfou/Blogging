@@ -70,7 +70,7 @@ export default {
 }
 
 .popup-parent {
-  position: absolute;
+  position: relative;
   display: flex;
   flex-direction: column;
   font-family: "Pridi", serif;
@@ -81,13 +81,13 @@ export default {
   display: flex;
   position: fixed;
   top: 0;
-  left: 35%;
+  left: 50%;
   padding: 0.3em;
   width: 18em;
   background-color: white;
   border: solid 2px black;
   border-radius: 5px;
-  transform: translateY(-1.6em);
+  transform: translateY(-1.6em) translateX(-50%);
   opacity: 1;
   transition: all 0.2s;
 }
@@ -142,6 +142,17 @@ export default {
   margin-right: 0.5em;
 }
 
+@media (max-width: 500px) {
+  .popup-body h1 {
+    font-size: 1.7rem;
+  }
+
+  .popup-body p {
+    font-size: 1rem;
+    padding-left: 0em;
+  }
+}
+
 .hidden {
   opacity: 0;
   transition: all 0.2s;
@@ -152,7 +163,7 @@ export default {
 }
 
 .show-popup {
-  transform: translateY(0.2em);
+  transform: translateY(0.2em) translateX(-50%);
   transition: all 0.2s;
 }
 </style>

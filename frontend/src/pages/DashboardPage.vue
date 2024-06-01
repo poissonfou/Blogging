@@ -429,6 +429,7 @@ export default {
     adjustConnectionsDisplay() {
       const grid = document.getElementById("grid");
       const contentDiv = document.getElementById("content");
+
       if (this.displayConnections && this.adjustConnectionsDisplay) {
         this.tab = "connections";
         grid.classList = "main-container";

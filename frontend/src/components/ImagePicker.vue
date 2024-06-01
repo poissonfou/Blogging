@@ -141,9 +141,10 @@ export default {
   width: 50em;
   border-radius: 10px;
   position: absolute;
-  left: 18%;
-  top: 15%;
   z-index: 500;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
 }
 
 .input-container {
@@ -200,6 +201,7 @@ export default {
 }
 
 .img-box {
+  position: relative;
   border: solid 2px black;
   border-radius: 5px;
   width: 100%;
@@ -217,6 +219,58 @@ export default {
   border-radius: 3px;
   object-fit: cover;
   width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .container {
+    width: 35em;
+  }
+
+  .input-container {
+    display: flex;
+    flex-direction: column;
+    align-items: unset;
+    gap: 0em;
+  }
+
+  .img-box h2 {
+    margin-top: 25%;
+  }
+}
+
+@media (max-width: 700px) {
+  .container {
+    width: 27em;
+  }
+
+  .img-box h2 {
+    margin-top: 30%;
+  }
+}
+
+@media (max-width: 500px) {
+  .container {
+    width: 22em;
+  }
+
+  .img-box h2 {
+    margin-top: 38%;
+  }
+
+  form input {
+    width: auto;
+    font-size: 1.2rem;
+  }
+
+  form label {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 400px) {
+  .container {
+    width: 20em;
+  }
 }
 
 .hidden {
