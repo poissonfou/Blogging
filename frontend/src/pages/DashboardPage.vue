@@ -1,12 +1,85 @@
 <template>
   <div id="wrapper-board">
     <the-popup :content="popupMessage" :confirmDelete="deletePost"></the-popup>
+    <the-AI-button
+      :submitPrompt="submitPrompt"
+      v-if="(tab == 'add-post' || tab == 'edit-post') && adjustProfileDisplay"
+    ></the-AI-button>
     <image-picker
       :closePopup="toggleImageSelector"
       :updateUser="updateUser"
       v-if="displayImageSelector"
     ></image-picker>
     <main class="main-container" id="grid">
+      <section class="user-info-container" v-if="adjustProfileDisplay">
+        <div class="user">
+          <div class="user-inner-container">
+            <div>
+              <div class="user-picture-box">
+                <span class="material-symbols-outlined" @click="showImageUI">
+                  add_a_photo
+                </span>
+                <div v-if="!user.picture" class="no-pic">
+                  {{ user.name[0] }}
+                </div>
+                <div v-else class="img">
+                  <img
+                    :src="'http://localhost:3000/images/' + user.picture"
+                    alt="user picture"
+                  />
+                </div>
+              </div>
+              <div class="user-identifiers-and-followers">
+                <div>
+                  <h3>{{ user.name }}</h3>
+                  <span>{{ user.tag }}</span>
+                </div>
+                <div class="follow-info">
+                  <span @click="showConnections('followers')">{{
+                    `Followers ${user.followers.length}`
+                  }}</span>
+                  <span @click="showConnections('following')">{{
+                    `Following ${user.following.length}`
+                  }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="navigation">
+            <div class="tabs">
+              <span @click="changeTab('posts')">Posts</span>
+              <span @click="changeTab('feed')">Feed</span>
+            </div>
+            <div class="link">
+              <router-link to="/auth?mode='update'">Update info</router-link>
+            </div>
+          </div>
+        </div>
+        <div>
+          <div
+            v-if="
+              tab !== 'add-post' &&
+              tab !== 'display-post' &&
+              tab !== 'edit-post'
+            "
+            class="user-tags-adjusted-display"
+          >
+            <div class="toggle-container" @click="toggleTagsDisplay">
+              <span>Tags</span>
+              <span class="toggle-arrow spin-arrow" id="toggle-arrow">^</span>
+            </div>
+            <div class="tags hide-tags" id="tags">
+              <span
+                v-for="[index, tag] in tagsUserArticles.entries()"
+                :key="index"
+                @click="filterPosts"
+              >
+                {{ tag }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </section>
       <section class="content" id="content">
         <div class="content-inner-container">
           <div
@@ -71,9 +144,104 @@
               :error="errorForm"
             ></the-new-post>
           </div>
+          <div v-if="tab == 'connections'">
+            <div class="inner-container-connections connections-tab-display">
+              <div v-if="displayConnections == 'followers'" class="followers">
+                <h1>Followers</h1>
+                <div
+                  class="follower"
+                  v-for="[index, follower] in followers.entries()"
+                  :key="index"
+                  @click="showProfile(follower)"
+                >
+                  <div class="follower-info">
+                    <div v-if="!follower.picture" class="follower-no-pic">
+                      {{ follower.name[0] }}
+                    </div>
+                    <div v-else class="follower-img">
+                      <img
+                        :src="
+                          'http://localhost:3000/images/' + follower.picture
+                        "
+                        alt="profile-picture"
+                      />
+                    </div>
+                    <div>
+                      <div class="follower-identifiers">
+                        <h3>{{ follower.name }}</h3>
+                        <span>{{ follower.tag }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="
+                      following.map((fol) => fol.id).indexOf(follow.id) !== -1
+                    "
+                  >
+                    <button
+                      @click="unfollow(follower.id)"
+                      class="button-unfollow"
+                    >
+                      Unfollow
+                    </button>
+                  </div>
+                  <div v-else>
+                    <button @click="follow(follower.id)" class="button-follow">
+                      Follow
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div v-if="displayConnections == 'following'" class="following">
+                <h1>Following</h1>
+                <div
+                  v-for="[index, foll] in following.entries()"
+                  :key="index"
+                  class="follow"
+                >
+                  <div class="follow-info">
+                    <div v-if="!foll.picture" class="follow-no-pic">
+                      {{ foll.name[0] }}
+                    </div>
+                    <div v-else class="follow-img">
+                      <img
+                        :src="'http://localhost:3000/images/' + foll.picture"
+                        alt="profile-picture"
+                      />
+                    </div>
+                    <div>
+                      <div class="follow-identifiers">
+                        <h3>{{ foll.name }}</h3>
+                        <span>{{ foll.tag }}</span>
+                      </div>
+                    </div>
+                  </div>
+
+                  <div
+                    v-if="
+                      following.map((fol) => fol.id).indexOf(foll.id) !== -1
+                    "
+                  >
+                    <button @click="unfollow(foll.id)" class="button-unfollow">
+                      Unfollow
+                    </button>
+                  </div>
+                  <div v-else>
+                    <button @click="follow(foll.id)" class="button-follow">
+                      Follow
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </div>
       </section>
-      <section class="connections" v-if="displayConnections">
+      <section
+        class="connections"
+        v-if="displayConnections && !adjustConnectionsDisplay"
+      >
         <div class="inner-container-connections">
           <div v-if="displayConnections == 'followers'" class="followers">
             <h1>Followers</h1>
@@ -156,7 +324,7 @@
           </div>
         </div>
       </section>
-      <section class="info">
+      <section class="info" v-if="!adjustProfileDisplay">
         <user-info
           :user="user"
           :changeTab="changeTab"
@@ -213,6 +381,7 @@ import UserInfo from "../components/UserInfo.vue";
 import ThePostMiniature from "../components/ThePostMiniature.vue";
 import ThePopup from "../components/ThePopup.vue";
 import ImagePicker from "../components/ImagePicker.vue";
+import TheAIButton from "../components/TheAIButton.vue";
 
 export default {
   components: {
@@ -221,6 +390,7 @@ export default {
     ThePostMiniature,
     ThePopup,
     ImagePicker,
+    TheAIButton,
   },
   data() {
     return {
@@ -231,6 +401,8 @@ export default {
       selectedPost: null,
       displayConnections: null,
       displayImageSelector: false,
+      adjustConnectionsDisplay: false,
+      adjustProfileDisplay: false,
       storeUpdates: [],
       followers: [],
       following: [],
@@ -243,12 +415,39 @@ export default {
     displayConnections() {
       const grid = document.getElementById("grid");
       const contentDiv = document.getElementById("content");
-      if (this.displayConnections) {
+
+      if (this.displayConnections && !this.adjustConnectionsDisplay) {
         grid.classList = "main-container-connection";
         contentDiv.classList = "content-display-connections";
-      } else {
+      }
+
+      if (!this.displayConnections && !this.adjustConnectionsDisplay) {
         grid.classList = "main-container";
         contentDiv.classList = "content";
+      }
+    },
+    adjustConnectionsDisplay() {
+      const grid = document.getElementById("grid");
+      const contentDiv = document.getElementById("content");
+      if (this.displayConnections && this.adjustConnectionsDisplay) {
+        this.tab = "connections";
+        grid.classList = "main-container";
+        contentDiv.classList = "content";
+      }
+
+      if (this.displayConnections && !this.adjustConnectionsDisplay) {
+        if (this.tab == "connections") this.tab = "posts";
+        grid.classList = "main-container-connection";
+        contentDiv.classList = "content-display-connections";
+      }
+    },
+    adjustProfileDisplay() {
+      const grid = document.getElementById("grid");
+
+      if (this.adjustProfileDisplay) {
+        grid.classList = "main-container-double-row-display";
+      } else {
+        grid.classList = "main-container";
       }
     },
   },
@@ -735,13 +934,21 @@ export default {
     showConnections(tab) {
       if (this.displayConnections == tab) {
         this.displayConnections = null;
+        if (this.adjustConnectionsDisplay) this.tab = "posts";
         return;
       }
       this.displayConnections = tab;
+      if (this.adjustConnectionsDisplay) this.tab = "connections";
     },
     toggleImageSelector() {
       console.log("here");
       this.displayImageSelector = !this.displayImageSelector;
+    },
+    toggleTagsDisplay() {
+      const arrowToggle = document.getElementById("toggle-arrow");
+      const tagsContainer = document.getElementById("tags");
+      arrowToggle.classList.toggle("spin-arrow");
+      tagsContainer.classList.toggle("hide-tags");
     },
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
@@ -906,12 +1113,45 @@ export default {
   created() {
     this.fetchUser();
   },
+  mounted() {
+    window.addEventListener("resize", () => {
+      if (window.innerWidth <= 1000 && !this.adjustConnectionsDisplay) {
+        this.adjustConnectionsDisplay = true;
+      }
+      if (window.innerWidth > 1000 && this.adjustConnectionsDisplay) {
+        this.adjustConnectionsDisplay = false;
+      }
+
+      if (window.innerWidth <= 750 && !this.adjustProfileDisplay) {
+        this.adjustProfileDisplay = true;
+      }
+      if (window.innerWidth > 750 && this.adjustProfileDisplay) {
+        this.adjustProfileDisplay = false;
+      }
+    });
+
+    if (window.innerWidth <= 1000 && !this.adjustConnectionsDisplay) {
+      this.adjustConnectionsDisplay = true;
+    }
+    if (window.innerWidth > 1000 && this.adjustConnectionsDisplay) {
+      this.adjustConnectionsDisplay = false;
+    }
+
+    if (window.innerWidth <= 750 && !this.adjustProfileDisplay) {
+      this.adjustProfileDisplay = true;
+    }
+    if (window.innerWidth > 750 && this.adjustProfileDisplay) {
+      this.adjustProfileDisplay = false;
+    }
+  },
 };
 </script>
 
 <style scoped>
 #wrapper-board {
   height: 100%;
+  display: flex;
+  flex-flow: column;
 }
 
 .main-container {
@@ -919,6 +1159,31 @@ export default {
   grid-template-columns: 1fr 20em;
   height: 100%;
   width: 100%;
+}
+
+.main-container-double-row-display {
+  display: grid;
+  grid-template-rows: auto 1fr;
+  height: 100%;
+  width: 100%;
+}
+
+@media (max-width: 1000px) {
+  .main-container-connection {
+    display: grid;
+    grid-template-columns: 1fr 15em;
+    height: 100%;
+    width: 100%;
+  }
+}
+
+@media (max-width: 750px) {
+  .main-container {
+    display: grid;
+    grid-template-columns: 1fr 15em;
+    height: 100%;
+    width: 100%;
+  }
 }
 
 .main-container-connection {
@@ -931,18 +1196,20 @@ export default {
 .content {
   padding: 0.5em;
   padding-bottom: 0em;
+  height: 100%;
 }
 
 .content-display-connections {
   padding-right: 0em;
   padding-left: 0.5em;
+  height: 100%;
 }
 
 .content-inner-container {
   border-top-right-radius: 10px;
   border-top-left-radius: 10px;
   background-color: white;
-  height: 99.5%;
+  height: 100%;
   border: solid 3px black;
   border-bottom: none;
 }
@@ -974,6 +1241,20 @@ export default {
   overflow-y: scroll;
 }
 
+@media (max-width: 750px) {
+  .header-content {
+    padding: 0em 0.5em;
+  }
+
+  .posts,
+  .search,
+  .feed {
+    padding: 0em 0.5em;
+    padding-right: 0em;
+    padding-top: 0.5em;
+  }
+}
+
 .posts::-webkit-scrollbar,
 .search::-webkit-scrollbar,
 .feed::-webkit-scrollbar {
@@ -994,6 +1275,139 @@ export default {
   border: solid white 3px;
 }
 
+.user-info-container {
+  padding: 0em 0.5em;
+  display: flex;
+  flex-direction: column;
+}
+
+.user {
+  background-color: white;
+  border-radius: 5px;
+  border: solid 3px black;
+  display: flex;
+  flex-direction: column;
+  font-family: "Pridi", serif;
+  padding: 0.5em;
+}
+
+@media (max-width: 750px) {
+  .user {
+    padding-bottom: 0.1em;
+  }
+}
+
+.user div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.user-inner-container {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.user-picture-box span {
+  position: absolute;
+  font-size: 2.5rem;
+  left: 43%;
+  top: 7%;
+  color: white;
+  opacity: 0;
+}
+
+.user-picture-box span:hover {
+  opacity: 1;
+  cursor: pointer;
+}
+
+.user .no-pic {
+  background-color: rgb(46, 190, 94);
+  width: fit-content;
+  padding: 0.7rem 1em;
+  border-radius: 5em;
+  color: white;
+  font-size: 1.5rem;
+  font-family: "Pridi", serif;
+  margin-top: 0.2em;
+}
+
+.img {
+  background-color: rgb(46, 190, 94);
+  padding: 0.3em;
+  padding-bottom: 0em;
+  border-radius: 100%;
+  color: white;
+  font-family: "Pridi", serif;
+  margin-top: 0.2em;
+}
+
+.user h3 {
+  margin: 0;
+}
+
+.img img {
+  width: 4.2em;
+  height: 4.2em;
+  border-radius: 50%;
+  margin-top: 0.1em;
+}
+
+.user-identifiers-and-followers div:first-child {
+  display: flex;
+  align-items: center;
+  gap: 0.5em;
+}
+
+.navigation {
+  display: flex;
+  align-items: center;
+}
+
+.link {
+  width: 100%;
+  text-align: right;
+}
+
+.link a {
+  text-decoration: none;
+  padding-right: 0.5em;
+  font-size: 0.8rem;
+  color: gray;
+}
+
+.follow-info span,
+.tabs span {
+  margin-right: 0.5em;
+}
+
+.follow-info span:hover {
+  cursor: pointer;
+}
+
+.tabs {
+  font-weight: bold;
+  font-size: 1.5rem;
+  color: rgb(53, 219, 109);
+}
+
+.tabs span:hover {
+  cursor: pointer;
+}
+
+@media (max-width: 750px) {
+  .navigation {
+    margin-top: 0.5em;
+  }
+
+  .tabs {
+    font-size: 1.2rem;
+    margin-left: 0.5em;
+  }
+}
+
 .connections {
   padding: 0.5em;
 }
@@ -1005,6 +1419,10 @@ export default {
   border: solid 2px black;
   padding: 0.5em;
   padding-bottom: 0em;
+}
+
+.connections-tab-display {
+  border: none;
 }
 
 .followers h1,
@@ -1101,6 +1519,42 @@ export default {
   border-radius: 5px;
 }
 
+.user-tags-adjusted-display {
+  background-color: white;
+  padding: 0.5em;
+  border: solid 3px black;
+  margin-top: 0.3em;
+  border-radius: 5px;
+}
+
+.toggle-container {
+  font-family: "Pridi", serif;
+  font-weight: bold;
+  font-size: 1.5rem;
+  display: flex;
+  gap: 0.2em;
+}
+
+.toggle-container:hover {
+  cursor: pointer;
+}
+
+.toggle-arrow {
+  transform: rotateZ(0deg) translateY(0.2em);
+  transition: all 0.3s;
+}
+
+.spin-arrow {
+  transform: rotateZ(180deg) translateY(0.2em);
+  transition: all 0.3s;
+}
+
+.tags {
+  display: block;
+  transition: all 0.3s;
+}
+
+.tags span,
 .user-tags span {
   display: inline-block;
   margin-right: 0.3em;
@@ -1113,7 +1567,13 @@ export default {
   font-family: "Pridi", serif;
 }
 
-.user-tags span:hover {
+.hide-tags {
+  display: none;
+  transition: all 0.3s;
+}
+
+.user-tags span:hover,
+.tags span:hover {
   cursor: pointer;
 }
 
