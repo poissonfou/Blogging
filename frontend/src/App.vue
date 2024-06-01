@@ -140,7 +140,7 @@ main {
 }
 
 .notifications {
-  position: absolute;
+  position: fixed;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -148,6 +148,13 @@ main {
   bottom: 0.1em;
   width: fit-content;
   overflow: hidden;
-  background-color: aqua;
+}
+
+@media (max-width: 750px) {
+  .notifications {
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+  }
 }
 </style>

@@ -1407,6 +1407,10 @@ export default {
     font-size: 1.2rem;
     margin-left: 0.5em;
   }
+
+  .user-picture-box .no-pic {
+    padding: 0.5em 0.8em;
+  }
 }
 
 .connections {

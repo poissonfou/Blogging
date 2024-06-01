@@ -67,7 +67,7 @@ export default {
 .user .no-pic {
   background-color: rgb(46, 190, 94);
   width: fit-content;
-  padding: 0.7rem 1em;
+  padding: 0.9rem 1em;
   border-radius: 5em;
   color: white;
   font-size: 1.5rem;

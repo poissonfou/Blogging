@@ -94,12 +94,13 @@ export default {
 
 .no-pic {
   background-color: rgb(46, 190, 94);
-  padding: 0.5rem 1em;
+  padding: 0.5rem 0.8em;
   border-radius: 5em;
   color: white;
   font-size: 1.2rem;
   font-family: "Pridi", serif;
   margin-top: 0.2em;
+  text-align: center;
 }
 
 .img {
@@ -117,10 +118,5 @@ export default {
   height: 2em;
   border-radius: 50%;
   margin-top: 0.1em;
-}
-
-.hidden {
-  opacity: 0;
-  transition: opacity 1s;
 }
 </style>
