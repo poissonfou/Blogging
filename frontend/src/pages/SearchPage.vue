@@ -112,6 +112,14 @@ export default {
     user() {
       return this.$store.state.user;
     },
+    query() {
+      return this.$route.query.q;
+    },
+  },
+  watch: {
+    query() {
+      if (this.query) this.fetchSearch();
+    },
   },
   methods: {
     async follow(event, id) {
@@ -209,6 +217,7 @@ export default {
       this.$store.commit("unfollow", idx);
     },
     async fetchSearch() {
+      this.results = { users: [], posts: [], status: "loading" };
       const searchQuery = this.$route.query.q;
       const userData = JSON.parse(localStorage.getItem("user"));
 
@@ -280,6 +289,7 @@ export default {
   },
   mounted() {
     this.fetchSearch();
+    console.log(this.query);
   },
 };
 </script>
