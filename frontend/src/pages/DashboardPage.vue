@@ -96,6 +96,25 @@
               <span>{{ `Articles: ` + this.user.posts.length }}</span>
             </div>
           </div>
+          <div v-if="tab == 'loading'">
+            <svg
+              width="50"
+              height="50"
+              viewBox="0 0 24 24"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+                opacity=".25"
+                fill="#FFFFFF"
+              />
+              <path
+                d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z"
+                class="spinner_z9k8"
+                fill="#2ebe5e"
+              />
+            </svg>
+          </div>
           <div v-if="tab == 'feed'" class="feed">
             <the-post-miniature
               v-for="[index, post] in feed.entries()"
@@ -407,7 +426,7 @@ export default {
       filteredPosts: [],
       tagsUserArticles: [],
       feed: [],
-      tab: "posts",
+      tab: "loading",
       selectedPost: null,
       displayConnections: null,
       displayImageSelector: false,
@@ -544,8 +563,6 @@ export default {
 
       const user = data.data.getUser;
 
-      console.log(user);
-
       const posts = user.posts;
       const tags = new Set([]);
 
@@ -557,6 +574,7 @@ export default {
       this.followers = JSON.parse(JSON.stringify(user.followers));
       this.following = JSON.parse(JSON.stringify(user.following));
       this.$store.commit("setUser", user);
+      this.tab = "posts";
     },
     async fetchFeed() {
       const { token } = JSON.parse(localStorage.getItem("user"));
@@ -1121,10 +1139,8 @@ export default {
       textbox.innerText = output.response;
     },
   },
-  created() {
-    this.fetchUser();
-  },
   mounted() {
+    this.fetchUser();
     window.addEventListener("resize", () => {
       if (window.innerWidth <= 1000 && !this.adjustConnectionsDisplay) {
         this.adjustConnectionsDisplay = true;
@@ -1711,5 +1727,22 @@ export default {
 
 .ai-box button:hover {
   cursor: pointer;
+}
+
+.spinner_z9k8 {
+  transform-origin: center;
+  animation: spinner_StKS 0.75s infinite linear;
+}
+
+svg {
+  display: block;
+  margin: auto;
+  margin-top: 30%;
+}
+
+@keyframes spinner_StKS {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
