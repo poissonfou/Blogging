@@ -45,9 +45,28 @@
     </div>
     <div class="comments">
       <h1>Comments</h1>
-      <div v-if="comments.length">
+      <div v-if="comments.status == 'loading'">
+        <svg
+          width="50"
+          height="50"
+          viewBox="0 0 24 24"
+          xmlns="http://www.w3.org/2000/svg"
+        >
+          <path
+            d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+            opacity=".25"
+            fill="#FFFFFF"
+          />
+          <path
+            d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z"
+            class="spinner_z9k8"
+            fill="#2ebe5e"
+          />
+        </svg>
+      </div>
+      <div v-if="comments.val.length">
         <div
-          v-for="[index, comment] in comments.entries()"
+          v-for="[index, comment] in comments.val.entries()"
           :key="index"
           class="comment"
         >
@@ -96,6 +115,12 @@
           </div>
         </div>
       </div>
+      <div
+        v-if="!comments.val.length && comments.status == 'done'"
+        class="no-comments"
+      >
+        <h2>Be the first to comment!</h2>
+      </div>
     </div>
   </div>
 </template>
@@ -115,7 +140,7 @@ export default {
         id: null,
         tags: [],
       },
-      comments: [],
+      comments: { val: [], status: "loading" },
       comment: "",
       popupMessage: {
         type: "",
@@ -198,11 +223,10 @@ export default {
     },
     async fetchComments() {
       const postId = this.post.id;
-
       const QUERY = {
         query: `
         {
-	          getComments(postId: ${+postId}){
+            getComments(postId: ${+postId}){
             author {
               id
               name
@@ -215,9 +239,7 @@ export default {
         }
         `,
       };
-
       let response;
-
       try {
         response = await fetch("http://localhost:3000/graphql", {
           method: "POST",
@@ -234,9 +256,7 @@ export default {
         };
         return;
       }
-
       const responseData = await response.json();
-
       if (responseData.errors) {
         this.popupMessage = {
           type: "error",
@@ -245,8 +265,7 @@ export default {
         };
         return;
       }
-
-      this.comments = responseData.data.getComments;
+      this.comments = { val: responseData.data.getComments, status: "done" };
     },
     async postComment(event) {
       event.preventDefault();
@@ -549,6 +568,12 @@ export default {
   margin-bottom: 0;
 }
 
+.no-comments {
+  display: flex;
+  justify-content: center;
+  font-family: "Zilla Slab", serif;
+}
+
 .comment {
   border: solid 2px black;
   padding: 1em;
@@ -690,5 +715,23 @@ export default {
 
 .button-selected {
   color: rgb(46, 190, 94);
+}
+
+.spinner_z9k8 {
+  transform-origin: center;
+  animation: spinner_StKS 0.75s infinite linear;
+}
+
+svg {
+  display: block;
+  margin: auto;
+  margin-top: 3em;
+  margin-bottom: 3em;
+}
+
+@keyframes spinner_StKS {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>

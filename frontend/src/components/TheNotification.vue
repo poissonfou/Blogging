@@ -119,4 +119,9 @@ export default {
   border-radius: 50%;
   margin-top: 0.1em;
 }
+
+.hidden {
+  opacity: 0;
+  transition: opacity 1s;
+}
 </style>
