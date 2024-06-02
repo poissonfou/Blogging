@@ -209,7 +209,7 @@ app.use(
       }
       const data = err.originalError.data;
       const message = err.message || "An error occurred.";
-      const code = err.originalError.code || 500;
+      const code = err.originalError.status || 500;
       return { message, status: code, data };
     },
   })

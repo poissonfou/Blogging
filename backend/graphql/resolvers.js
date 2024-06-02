@@ -64,10 +64,16 @@ module.exports = {
         email: user.email,
       },
       "bloggingsecretyeehaaw",
-      { expiresIn: "3h" }
+      { expiresIn: "8h" }
     );
 
-    return { token, id: user[0].dataValues.id, tag: user[0].dataValues.tag };
+    return {
+      token,
+      id: user[0].dataValues.id,
+      tag: !user[0].dataValues.tag
+        ? "NO_TAG_RESTIGERED"
+        : user[0].dataValues.tag.length,
+    };
   },
   signup: async ({ signupInput }) => {
     let errorMessage;
@@ -131,10 +137,10 @@ module.exports = {
         email: newUser.email,
       },
       "bloggingsecretyeehaaw",
-      { expiresIn: "3h" }
+      { expiresIn: "8h" }
     );
 
-    return { token, id: newUser.id, tag: "" };
+    return { token, id: newUser.id, tag: "NO_TAG_RESTIGERED" };
   },
   update: async ({ name, password, confirm, token }) => {
     const nameVal = name;

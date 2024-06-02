@@ -1,5 +1,6 @@
 <template>
   <div id="wrapper">
+    <the-popup :content="popupMessage"></the-popup>
     <the-header :user="user" :logout="logout"></the-header>
     <main>
       <router-view></router-view>
@@ -17,18 +18,27 @@
 <script>
 import TheHeader from "./components/TheHeader.vue";
 import TheNotification from "./components/TheNotification.vue";
+import ThePopup from "./components/ThePopup.vue";
 
 import openSocket from "socket.io-client";
 
 export default {
   name: "App",
-  components: { TheHeader, TheNotification },
+  components: { TheHeader, TheNotification, ThePopup },
   data() {
     return {
-      user: JSON.parse(localStorage.getItem("user")),
+      authTimeout: null,
+      popupMessage: {
+        type: "",
+        msg: null,
+        data: null,
+      },
     };
   },
   computed: {
+    user() {
+      return this.$store.state.user;
+    },
     route() {
       return this.$route;
     },
@@ -48,10 +58,47 @@ export default {
         this.user = JSON.parse(localStorage.getItem("user")).id;
       }
     },
+    user() {
+      if (JSON.parse(localStorage.getItem("user")) && !this.authTimeout) {
+        this.authTimeout = setTimeout(() => {
+          this.popupMessage = {
+            type: "error",
+            msg: "Your session has expired. Please login again.",
+            data: null,
+          };
+
+          setTimeout(() => {
+            this.popupMessage = {
+              type: "",
+              msg: null,
+              data: null,
+            };
+            this.$store.commit("setUser", {
+              id: null,
+              name: "",
+              picture: "",
+              posts: [],
+              followers: [],
+              following: [],
+            });
+            localStorage.setItem("user", null);
+            this.$router.push("/home");
+          }, 3000);
+        }, 2.88e7);
+      }
+    },
   },
   methods: {
     logout() {
       localStorage.setItem("user", JSON.stringify(null));
+      this.$store.commit("setUser", {
+        id: null,
+        name: "",
+        picture: "",
+        posts: [],
+        followers: [],
+        following: [],
+      });
       this.user = null;
       sessionStorage.clear();
       this.$router.push("/");

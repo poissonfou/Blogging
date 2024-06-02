@@ -1,11 +1,11 @@
 <template>
   <header>
-    <router-link :to="user ? '/dashboard' : '/'">
+    <router-link :to="user.id ? '/' : '/home'">
       <h1 v-if="!adjustDisplay">Blogging</h1>
       <h1 v-else class="collapsed-logo">B.</h1>
     </router-link>
 
-    <nav v-if="!user" class="nav-loged-off">
+    <nav v-if="!user.id" class="nav-loged-off">
       <router-link to="/auth?mode=login">Login</router-link>
       <router-link to="/auth?mode=signup">Signup</router-link>
     </nav>

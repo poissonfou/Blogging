@@ -14,18 +14,19 @@ const router = createRouter({
     {
       path: "/",
       redirect: () => {
-        if (
-          !localStorage.getItem("user") ||
-          !JSON.parse(localStorage.getItem("user"))
-        )
-          return "/home";
-        const { token } = JSON.parse(localStorage.getItem("user"));
+        if (!JSON.parse(localStorage.getItem("user"))) return "/home";
+        const id = JSON.parse(localStorage.getItem("user"))?.id;
+        const tag = JSON.parse(localStorage.getItem("user"))?.tag;
 
-        if (token && token.length) {
+        if (id && typeof tag == "string" && tag.length) {
           return "/dashboard";
-        } else {
-          return "/home";
         }
+
+        if (id && typeof tag == "string" && !tag.length) {
+          return "/welcome";
+        }
+
+        return "/home";
       },
     },
     {
@@ -33,14 +34,10 @@ const router = createRouter({
       name: "home",
       components: { default: HomePage },
       beforeEnter(to, from, next) {
-        if (
-          !localStorage.getItem("user") ||
-          !JSON.parse(localStorage.getItem("user"))
-        )
-          next(true);
-        const { token } = JSON.parse(localStorage.getItem("user"));
+        if (!JSON.parse(localStorage.getItem("user"))) next(true);
+        const token = JSON.parse(localStorage.getItem("user"))?.token;
 
-        if (token) {
+        if (typeof token !== "string" && !token.length) {
           next(from.fullPath);
         } else {
           next(true);
@@ -53,14 +50,10 @@ const router = createRouter({
       components: { default: AuthPage },
       beforeEnter(to, from, next) {
         if (to.query.mode == "update") {
-          if (
-            !localStorage.getItem("user") ||
-            !JSON.parse(localStorage.getItem("user"))
-          )
-            return next(false);
-          const { token } = JSON.parse(localStorage.getItem("user"));
+          if (!JSON.parse(localStorage.getItem("user"))) return next(false);
+          const token = JSON.parse(localStorage.getItem("user"))?.token;
 
-          if (token && token.length) {
+          if (typeof token == "string" && token.length) {
             return next(true);
           } else {
             return next(false);
@@ -74,14 +67,16 @@ const router = createRouter({
       name: "welcome",
       components: { default: WelcomePage },
       async beforeEnter(to, from, next) {
-        if (
-          !localStorage.getItem("user") ||
-          !JSON.parse(localStorage.getItem("user"))
-        )
-          return next(false);
-        const { token } = JSON.parse(localStorage.getItem("user"));
+        if (!JSON.parse(localStorage.getItem("user"))) return next(false);
+        const token = JSON.parse(localStorage.getItem("user"))?.token;
+        const tag = JSON.parse(localStorage.getItem("user"))?.tag;
 
-        if (token && token.length) {
+        if (
+          typeof token == "string" &&
+          token.length &&
+          typeof tag == "string" &&
+          !tag.length
+        ) {
           next(true);
         } else {
           next(false);
@@ -93,11 +88,7 @@ const router = createRouter({
       name: "dashboard",
       components: { default: DashboardPage },
       beforeEnter(to, from, next) {
-        if (
-          !localStorage.getItem("user") ||
-          !JSON.parse(localStorage.getItem("user"))
-        )
-          return next(false);
+        if (!JSON.parse(localStorage.getItem("user"))) return next(false);
         const token = JSON.parse(localStorage.getItem("user"))?.token;
         const tag = JSON.parse(localStorage.getItem("user"))?.tag;
 
@@ -126,14 +117,10 @@ const router = createRouter({
     {
       path: "/:unsupportedRoute(.*)",
       redirect: () => {
-        if (
-          !localStorage.getItem("user") ||
-          !JSON.parse(localStorage.getItem("user"))
-        )
-          return "/home";
-        const { token } = JSON.parse(localStorage.getItem("user"));
+        if (!JSON.parse(localStorage.getItem("user"))) return "/home";
+        const token = JSON.parse(localStorage.getItem("user"))?.id;
 
-        if (token && token.length) {
+        if (typeof token == "string" && token.length) {
           return "/dashboard";
         } else {
           return "/home";

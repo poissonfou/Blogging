@@ -287,10 +287,29 @@ export default {
 
       localStorage.setItem(
         "user",
-        JSON.stringify({ ...responseData.data.login })
+        JSON.stringify({
+          ...responseData.data.login,
+          tag:
+            responseData.data.login.tag == "NO_TAG_RESTIGERED"
+              ? ""
+              : responseData.data.login.tag,
+        })
       );
 
-      this.$router.push({ path: "/dashboard" });
+      this.$store.commit("setUser", {
+        id: responseData.data.login.id,
+        name: "",
+        picture: "",
+        tag:
+          responseData.data.login.tag == "NO_TAG_RESTIGERED"
+            ? ""
+            : responseData.data.login.tag,
+        posts: [],
+        followers: [],
+        following: [],
+      });
+
+      this.$router.push({ path: "/" });
     },
     async signup(event) {
       event.preventDefault();
@@ -332,6 +351,7 @@ export default {
            signup(signupInput: {email: "${email}", name: "${name}", password: "${password}", confirm: "${confirm}" }){
               id
               token
+              tag
             }
           }
         `,
@@ -367,6 +387,16 @@ export default {
         "user",
         JSON.stringify({ ...responseData.data.signup, tag: "" })
       );
+
+      this.$store.commit("setUser", {
+        id: responseData.data.signup.id,
+        tag: "",
+        name: "",
+        picture: "",
+        posts: [],
+        followers: [],
+        following: [],
+      });
 
       this.$router.push({ path: "/welcome" });
     },
