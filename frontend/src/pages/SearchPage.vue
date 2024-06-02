@@ -1,6 +1,25 @@
 <template>
   <div class="page-body">
     <the-popup :content="popupMessage"></the-popup>
+    <div v-if="results.status == 'loading'">
+      <svg
+        width="50"
+        height="50"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+          opacity=".25"
+          fill="#FFFFFF"
+        />
+        <path
+          d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z"
+          class="spinner_z9k8"
+          fill="#2ebe5e"
+        />
+      </svg>
+    </div>
     <div v-if="results.users.length">
       <div
         class="search-result"
@@ -43,7 +62,6 @@
         </div>
       </div>
     </div>
-
     <div v-if="results.posts.length">
       <the-post-miniature
         v-for="[index, result] in results.posts.entries()"
@@ -52,6 +70,17 @@
         :post="result"
       >
       </the-post-miniature>
+    </div>
+    <div
+      v-if="
+        !results.users.length &&
+        !results.posts.length &&
+        results.status == 'done'
+      "
+      class="no-results"
+    >
+      <span class="material-symbols-outlined"> error </span>
+      <h2>No results!</h2>
     </div>
   </div>
 </template>
@@ -66,6 +95,7 @@ export default {
       results: {
         users: [],
         posts: [],
+        status: "loading",
       },
       popupMessage: {
         type: "",
@@ -239,9 +269,7 @@ export default {
         return;
       }
 
-      this.results = responseData.data.search;
-
-      console.log(responseData);
+      this.results = { ...responseData.data.search, status: "done" };
     },
     showProfile(profile) {
       this.$router.push("/profile/" + profile.id);
@@ -409,5 +437,37 @@ export default {
 
 .search-result button:hover {
   cursor: pointer;
+}
+
+.no-results {
+  display: flex;
+  align-items: center;
+  font-family: "Pridi", serif;
+  font-size: 1.5rem;
+  justify-content: center;
+  padding-top: 15%;
+}
+
+.no-results span {
+  font-size: 3.5rem;
+  color: red;
+}
+
+.spinner_z9k8 {
+  transform-origin: center;
+  animation: spinner_StKS 0.75s infinite linear;
+}
+
+svg {
+  display: block;
+  margin: auto;
+  margin-top: 3em;
+  margin-bottom: 3em;
+}
+
+@keyframes spinner_StKS {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
