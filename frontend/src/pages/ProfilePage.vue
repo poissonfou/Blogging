@@ -1,7 +1,26 @@
 <template>
-  <div>
+  <div class="profile-body">
     <the-popup :content="popupMessage"></the-popup>
-    <div class="profile-body">
+    <div v-if="!user.id">
+      <svg
+        width="50"
+        height="50"
+        viewBox="0 0 24 24"
+        xmlns="http://www.w3.org/2000/svg"
+      >
+        <path
+          d="M12,1A11,11,0,1,0,23,12,11,11,0,0,0,12,1Zm0,19a8,8,0,1,1,8-8A8,8,0,0,1,12,20Z"
+          opacity=".25"
+          fill="#FFFFFF"
+        />
+        <path
+          d="M12,4a8,8,0,0,1,7.89,6.7A1.53,1.53,0,0,0,21.38,12h0a1.5,1.5,0,0,0,1.48-1.75,11,11,0,0,0-21.72,0A1.5,1.5,0,0,0,2.62,12h0a1.53,1.53,0,0,0,1.49-1.3A8,8,0,0,1,12,4Z"
+          class="spinner_z9k8"
+          fill="#2ebe5e"
+        />
+      </svg>
+    </div>
+    <div v-else>
       <div class="profile-header">
         <div class="info">
           <div v-if="!user.picture" class="no-pic">{{ user.name[0] }}</div>
@@ -55,12 +74,17 @@
         </div>
       </div>
       <div class="posts">
-        <the-post-miniature
-          v-for="[index, post] in user.posts.entries()"
-          :key="index"
-          :post="post"
-          @click="showPost(post.id)"
-        ></the-post-miniature>
+        <div v-if="user.posts.length">
+          <the-post-miniature
+            v-for="[index, post] in user.posts.entries()"
+            :key="index"
+            :post="post"
+            @click="showPost(post.id)"
+          ></the-post-miniature>
+        </div>
+        <div v-else class="no-posts">
+          <h2>No posts.</h2>
+        </div>
       </div>
     </div>
   </div>
@@ -100,7 +124,6 @@ export default {
     async fetchUser() {
       const id = this.$route.params.id;
       const route = this.$route.path;
-
       const QUERY = {
         query: `
           {
@@ -135,9 +158,7 @@ export default {
           }
         `,
       };
-
       let response;
-
       try {
         response = await fetch("http://localhost:3000/graphql", {
           method: "POST",
@@ -154,9 +175,7 @@ export default {
         };
         return;
       }
-
       const data = await response.json();
-
       if (data.errors) {
         this.popupMessage = {
           type: "error",
@@ -165,18 +184,13 @@ export default {
         };
         return;
       }
-
       const user = data.data.getUser;
-
       console.log(user);
-
       const posts = user.posts;
       const tags = new Set([]);
-
       for (let i = 0; i < posts.length; i++) {
         tags.add(...posts[i].tags);
       }
-
       this.tagsUserArticles = [...tags];
       this.user = user;
     },
@@ -353,10 +367,10 @@ export default {
 .no-pic {
   background-color: rgb(46, 190, 94);
   width: fit-content;
-  padding: 0.5rem 0.8em;
+  padding: 1rem 0.8em;
   border-radius: 5em;
   color: white;
-  font-size: 3rem;
+  font-size: 2.5rem;
   font-family: "Pridi", serif;
   margin-top: 0.2em;
 }
@@ -405,7 +419,11 @@ export default {
 
 .btn-adjusted {
   display: flex;
-  justify-content: end;
+  margin-top: 1em;
+}
+
+.btn-adjusted button {
+  box-shadow: none;
 }
 
 @media (max-width: 1000px) {
@@ -416,6 +434,11 @@ export default {
 
   .profile-header h1 {
     font-size: 2.5rem;
+  }
+
+  .no-pic {
+    padding: 0.7em 1.1em;
+    font-size: 1.7rem;
   }
 
   .img img {
@@ -457,6 +480,11 @@ export default {
     font-size: 1rem;
   }
 
+  .no-pic {
+    padding: 0.7em 1.2em;
+    font-size: 1.5rem;
+  }
+
   .img img {
     width: 5.5em;
     height: 5.5em;
@@ -476,13 +504,13 @@ export default {
     gap: 1em;
   }
 
-  .user-identifiers {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
   .user-identifiers span {
     font-size: 1rem;
+  }
+
+  .no-pic {
+    padding: 0.8em 1.2em;
+    font-size: 1.5rem;
   }
 
   .img img {
@@ -535,5 +563,33 @@ export default {
   background: rgb(15, 15, 15);
   border-radius: 10px;
   border: solid white 3px;
+}
+
+.no-posts {
+  text-align: center;
+}
+
+.no-posts h2 {
+  margin: auto;
+  margin-top: 1rem;
+  font-family: "Pridi", serif;
+  font-size: 2rem;
+}
+
+.spinner_z9k8 {
+  transform-origin: center;
+  animation: spinner_StKS 0.75s infinite linear;
+}
+
+svg {
+  display: block;
+  margin: auto;
+  margin-top: 30%;
+}
+
+@keyframes spinner_StKS {
+  100% {
+    transform: rotate(360deg);
+  }
 }
 </style>
