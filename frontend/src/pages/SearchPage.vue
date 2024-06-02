@@ -238,6 +238,10 @@ export default {
             }
           }
           posts{
+            author {
+              picture
+              name
+            }
             id
             title
             abstract
@@ -278,6 +282,8 @@ export default {
         return;
       }
 
+      console.log(responseData.data.search);
+
       this.results = { ...responseData.data.search, status: "done" };
     },
     showProfile(profile) {
@@ -289,7 +295,6 @@ export default {
   },
   mounted() {
     this.fetchSearch();
-    console.log(this.query);
   },
 };
 </script>

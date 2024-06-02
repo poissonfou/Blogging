@@ -2,7 +2,19 @@
   <div class="post-miniature">
     <h2>{{ post.title }}</h2>
     <p>{{ post.abstract }}</p>
-    <div class="tags-and-btns">
+    <div v-if="post.author" class="author-container">
+      <div v-if="post.author.picture" class="no-pic">
+        {{ post.author.name[0] }}
+      </div>
+      <div v-else class="img">
+        <img
+          :src="'http://localhost:3000/images/' + post.author.picture"
+          alt="user picture"
+        />
+      </div>
+      <span>{{ post.author.name }}</span>
+    </div>
+    <div class="tags-and-btns" v-if="edit && deletion">
       <div class="tags-container">
         <span
           v-for="[index, tag] in post.tags.entries()"
@@ -11,12 +23,20 @@
           >{{ tag }}</span
         >
       </div>
-      <div class="btn" v-if="edit && deletion">
+      <div class="btn">
         <button @click="edit($event, post)">Edit</button>
         <button @click="deletion($event, post.id)" class="delete">
           Delete
         </button>
       </div>
+    </div>
+    <div v-else class="tags-container">
+      <span
+        v-for="[index, tag] in post.tags.entries()"
+        :key="index"
+        class="tag"
+        >{{ tag }}</span
+      >
     </div>
   </div>
 </template>
@@ -54,8 +74,30 @@ export default {
   margin-bottom: 0.4em;
 }
 
+.author-container {
+  display: flex;
+  align-items: center;
+  gap: 0.2rem;
+}
+
+.author-container img {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 50%;
+}
+
+.no-pic {
+  background-color: rgb(53, 219, 109);
+  padding: 0em 0.5em;
+  border-radius: 50%;
+  font-family: "Pridi", serif;
+}
+
 .tags-container {
   padding: 0.2em;
+}
+
+.tags-and-btns .tags-container {
   width: 60%;
 }
 
@@ -68,6 +110,7 @@ export default {
   padding: 0.5em;
   border-radius: 5px;
   font-size: 0.8rem;
+  margin-top: 0.5em;
 }
 
 .tags-and-btns {

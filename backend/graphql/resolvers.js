@@ -420,7 +420,8 @@ module.exports = {
       const dist = levenshtein(queryLowerCase, posts[j].title);
       if (dist < 30) {
         posts[j].tags = JSON.parse(posts[j].tags);
-        postsResults.push(posts[j]);
+        const author = await User.findByPk(posts[j].userId);
+        postsResults.push({ ...posts[j], author: { ...author.dataValues } });
       }
     }
 
