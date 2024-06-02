@@ -54,9 +54,6 @@ export default {
         });
         this.$store.state.pendingUpdates = [];
       }
-      if (this.$route.path == "/dashboard") {
-        this.user = JSON.parse(localStorage.getItem("user")).id;
-      }
     },
     user() {
       if (JSON.parse(localStorage.getItem("user")) && !this.authTimeout) {

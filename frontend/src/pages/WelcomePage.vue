@@ -65,9 +65,10 @@ export default {
     },
     async saveTagAndImage(event) {
       if (event) event.preventDefault();
+      if (this.tag[0] == "@") this.tag = this.tag.replace("@", "");
       const form = new FormData();
       const picture = document.forms["form"]["picture"].files[0];
-      const userTag = document.getElementById("userTag").value.trim();
+      const userTag = this.tag;
       const { id } = JSON.parse(localStorage.getItem("user"));
 
       if (!userTag.length) {

@@ -567,7 +567,7 @@ export default {
       const tags = new Set([]);
 
       for (let i = 0; i < posts.length; i++) {
-        tags.add(...posts[i].tags);
+        posts[i].tags.map((el) => tags.add(el));
       }
 
       this.tagsUserArticles = [...tags];

@@ -4,6 +4,31 @@
     <div class="header">
       <h1>{{ post.title }}</h1>
       <h3>{{ post.abstract }}</h3>
+
+      <div class="author-info">
+        <div @click="redirectProfile(post.author.id)">
+          <div v-if="!post.author.picture" class="no-pic">
+            {{ post.author.name[0] }}
+          </div>
+          <div v-else class="img">
+            <img
+              :src="'http://localhost:3000/images/' + post.author.picture"
+              alt="user picture"
+            />
+          </div>
+          <span>{{ post.author.name }}</span>
+        </div>
+        <span>
+          | <span>Posted at: {{ post.createdAt }}</span
+          ><span v-if="post.updated">
+            | Edited: {{ post.updatedAt }}</span
+          ></span
+        >
+      </div>
+    </div>
+    <div id="body"></div>
+    <div class="tags-box">
+      <h2>Tags:</h2>
       <div class="tags">
         <span
           v-for="[index, tag] in post.tags.entries()"
@@ -13,21 +38,8 @@
           {{ tag }}
         </span>
       </div>
-
-      <div class="author-info">
-        <div v-if="!post.author.picture" class="no-pic">
-          {{ post.author.name[0] }}
-        </div>
-        <div v-else class="img">
-          <img
-            :src="'http://localhost:3000/images/' + post.author.picture"
-            alt="user picture"
-          />
-        </div>
-        <span>{{ post.author.name }}</span>
-      </div>
     </div>
-    <div id="body"></div>
+
     <div class="new-comment">
       <the-form @submit="postComment">
         <div class="input-box">
@@ -139,6 +151,9 @@ export default {
         body: "",
         id: null,
         tags: [],
+        createdAt: null,
+        updatedAt: null,
+        updated: null,
       },
       comments: { val: [], status: "loading" },
       comment: "",
@@ -218,8 +233,29 @@ export default {
         };
         return;
       }
+      const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+      const dateFormat = new Intl.DateTimeFormat("pt-BR", { timeZone: tz });
 
-      this.post = responseData.data.getPost;
+      const createdAt = dateFormat.format(
+        new Date(+responseData.data.getPost.createdAt)
+      );
+      const updatedAt = dateFormat.format(
+        new Date(+responseData.data.getPost.updatedAt)
+      );
+      const updated =
+        +responseData.data.getPost.createdAt !==
+        +responseData.data.getPost.updatedAt;
+
+      console.log(
+        +responseData.data.getPost.createdAt !==
+          +responseData.data.getPost.updatedAt
+      ),
+        (this.post = {
+          ...responseData.data.getPost,
+          createdAt,
+          updatedAt,
+          updated,
+        });
     },
     async fetchComments() {
       const postId = this.post.id;
@@ -492,10 +528,22 @@ export default {
   padding: 0.5em 0em;
 }
 
+.author-info div:first-child {
+  display: flex;
+  align-items: center;
+}
+
+.author-info div:first-child:hover {
+  cursor: pointer;
+}
+
 .author-info span {
-  font-size: 1.2rem;
+  font-size: 1.1rem;
   font-family: "Zilla Slab", serif;
-  margin-left: 0.5em;
+}
+
+.author-info div:first-child span {
+  margin: 0em 0.5em;
 }
 
 .no-pic {
@@ -521,14 +569,14 @@ export default {
 }
 
 .img img {
-  width: 3em;
-  height: 3em;
+  width: 2em;
+  height: 2em;
   border-radius: 50%;
   margin-top: 0.1em;
 }
 
 .tags {
-  margin-top: 1em;
+  margin-top: 0.2em;
   margin-bottom: 0.5em;
 }
 
@@ -551,8 +599,18 @@ export default {
   word-wrap: break-word;
 }
 
+.tags-box {
+  margin-top: 2rem;
+  border-top: solid 1px black;
+}
+
+.tags-box h2 {
+  margin: 0;
+  font-family: "Pridi", serif;
+}
+
 .new-comment {
-  margin-top: 5em;
+  margin-top: 2em;
 }
 
 .new-comment textarea {

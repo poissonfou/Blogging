@@ -56,9 +56,11 @@ export default {
 
 .tags-container {
   padding: 0.2em;
+  width: 60%;
 }
 
 .tag {
+  display: inline-block;
   margin-right: 0.3em;
   background: rgb(64, 89, 173);
   border: solid 1px black;
