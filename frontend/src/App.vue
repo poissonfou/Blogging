@@ -107,7 +107,7 @@ html {
 body {
   margin: 0;
   font-family: "Poppins", sans-serif;
-  background-color: rgb(53, 219, 109);
+  background-color: #35db6d;
   height: 100%;
 }
 
@@ -122,7 +122,7 @@ body::-webkit-scrollbar-track {
 body::-webkit-scrollbar-thumb {
   background: rgb(15, 15, 15);
   border-radius: 10px;
-  border: solid rgb(53, 219, 109) 3px;
+  border: solid #35db6d 3px;
 }
 
 #app {

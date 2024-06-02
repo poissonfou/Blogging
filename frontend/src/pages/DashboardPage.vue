@@ -106,15 +106,25 @@
             </the-post-miniature>
           </div>
           <div v-if="tab == 'posts'" class="posts">
-            <the-post-miniature
-              v-for="[index, post] in user.posts.entries()"
-              :key="index"
-              :post="post"
-              :edit="showEdit"
-              :deletion="showDelete"
-              @click="showPost(post.id, post.title)"
-            >
-            </the-post-miniature>
+            <div v-if="user.posts.length">
+              <the-post-miniature
+                v-for="[index, post] in user.posts.entries()"
+                :key="index"
+                :post="post"
+                :edit="showEdit"
+                :deletion="showDelete"
+                @click="showPost(post.id, post.title)"
+              >
+              </the-post-miniature>
+            </div>
+            <div v-else class="no-posts">
+              <img src="/images/no-posts.png" alt="illustration" />
+              <!-- <a href="https://storyset.com/idea">Idea illustrations by Storyset</a> -->
+              <div class="call-for-action">
+                <h2>Write your first post!</h2>
+                <button @click="changeTab('add-post')">Get started</button>
+              </div>
+            </div>
           </div>
           <div v-if="tab == 'filtered-posts'" class="posts">
             <the-post-miniature
@@ -1276,6 +1286,48 @@ export default {
   border: solid white 3px;
 }
 
+.no-posts {
+  position: relative;
+  margin: 0 auto;
+  width: 25em;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.no-posts img {
+  width: 100%;
+  height: 25em;
+}
+
+.no-posts h2 {
+  margin: 0em;
+  font-family: "Pridi", serif;
+  font-size: 2rem;
+}
+
+.no-posts button {
+  border: solid 2px black;
+  border-radius: 5px;
+  padding: 0.1em 1.3em;
+  width: fit-content;
+  font-family: "Pridi", serif;
+  font-size: 1.2rem;
+  background-color: rgb(53, 219, 109);
+}
+
+.no-posts button:hover {
+  cursor: pointer;
+}
+
+.call-for-action {
+  position: absolute;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  bottom: 0;
+}
+
 .user-info-container {
   padding: 0em 0.5em;
   display: flex;
@@ -1519,7 +1571,7 @@ export default {
 .user-tags {
   background-color: white;
   padding: 0.5em;
-  border: solid 2px black;
+  border: solid 3px black;
   margin-top: 0.3em;
   border-radius: 5px;
 }
