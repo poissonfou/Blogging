@@ -268,6 +268,12 @@ export default {
   font-size: 1.2rem;
 }
 
+@media (max-width: 800px) {
+  .tag {
+    font-size: 1rem;
+  }
+}
+
 .tag:hover {
   cursor: pointer;
 }
