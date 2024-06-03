@@ -224,6 +224,7 @@ export default {
             msg: "Please login to comment.",
             data: null,
           };
+          return;
         }
 
         this.popupMessage = {
@@ -246,16 +247,12 @@ export default {
         +responseData.data.getPost.createdAt !==
         +responseData.data.getPost.updatedAt;
 
-      console.log(
-        +responseData.data.getPost.createdAt !==
-          +responseData.data.getPost.updatedAt
-      ),
-        (this.post = {
-          ...responseData.data.getPost,
-          createdAt,
-          updatedAt,
-          updated,
-        });
+      this.post = {
+        ...responseData.data.getPost,
+        createdAt,
+        updatedAt,
+        updated,
+      };
     },
     async fetchComments() {
       const postId = this.post.id;
@@ -318,6 +315,7 @@ export default {
           msg: "Something went wrong. Please reload.",
           data: null,
         };
+        return;
       }
 
       const QUERY = {
@@ -461,6 +459,7 @@ export default {
             msg: "Please login to interact with comments.",
             data: null,
           };
+          return;
         }
         console.log("something went wrong", responseData.errors[0].message);
         this.post.comments[idxComment][type] = copyArrType;
@@ -476,9 +475,11 @@ export default {
   },
   async mounted() {
     await this.fetchPost(this.$route.params.id);
-    const body = document.getElementById("body");
-    body.innerHTML = this.post.body;
-    await this.fetchComments();
+    if (!this.popupMessage.msg) {
+      const body = document.getElementById("body");
+      body.innerHTML = this.post.body;
+      await this.fetchComments();
+    }
   },
 };
 </script>
