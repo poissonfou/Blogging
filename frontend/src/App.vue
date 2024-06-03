@@ -1,6 +1,6 @@
 <template>
   <div id="wrapper">
-    <the-popup :content="popupMessage"></the-popup>
+    <the-popup :content="popupMessage" v-if="popupMessage.msg"></the-popup>
     <the-header :user="user" :logout="logout"></the-header>
     <main>
       <router-view></router-view>
@@ -109,7 +109,11 @@ export default {
         transports: ["websocket", "polling", "flashsocket"],
       });
     } catch (e) {
-      this.error = "Couldn't connect to server. Please reload";
+      this.popupMessage = {
+        type: "error",
+        msg: "Couldn't connect to server. Please reload.",
+        data: null,
+      };
       return;
     }
 

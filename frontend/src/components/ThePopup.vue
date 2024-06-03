@@ -36,10 +36,12 @@ export default {
       const popup = document.getElementById("popup");
       const backdrop = document.getElementById("backdrop");
       if (this.contentVal.type !== "") {
+        console.log("we are here");
         popup.classList.remove("hidden");
         popup.classList.add("show-popup");
         backdrop.classList.remove("none");
       } else {
+        console.log("we are hidden");
         popup.classList.add("hidden");
         popup.classList.remove("show-popup");
         backdrop.classList.add("none");
