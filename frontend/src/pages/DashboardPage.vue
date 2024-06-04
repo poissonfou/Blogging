@@ -923,8 +923,10 @@ export default {
     async deletePost(id) {
       const { token } = JSON.parse(localStorage.getItem("user"));
       const popup = document.getElementById("popup");
+      const backdrop = document.getElementById("backdrop");
       popup.classList.add("hidden");
       popup.classList.remove("show-popup");
+      backdrop.classList.add("none");
 
       const QUERY = {
         query: `
@@ -969,7 +971,13 @@ export default {
       const postIdx = this.user.posts.map((post) => post.id).indexOf(id);
       this.$store.commit("deletePost", postIdx);
 
-      this.tab = "posts";
+      const tags = new Set([]);
+
+      for (let i = 0; i < this.user.posts.length; i++) {
+        this.user.posts[i].tags.map((el) => tags.add(el));
+      }
+
+      this.tagsUserArticles = [...tags];
     },
     filterPosts(event) {
       const tag = event.target.innerText;
