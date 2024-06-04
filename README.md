@@ -1,5 +1,7 @@
 A website where a user can create and share essays, as well as follow other users and read their essays.
 Essays contain tags which defines its main subjects, and the creation/editing page contains a AI chatbox created with Google Gemini.
+
+
 Frontend -> Vue.js 3, Vue Router, Vuex
 Backend -> Node.js, GraphQL, Sequelize + MySQL
 HOW TO RUN THE SERVER: npm run start; for a dev server, npm run start:dev
