@@ -5,6 +5,10 @@ const multer = require("multer");
 const fs = require("fs");
 const path = require("path");
 const { GoogleGenerativeAI } = require("@google/generative-ai");
+const helmet = require("helmet");
+const compression = require("compression");
+const morgan = require("morgan");
+require("dotenv").config();
 
 const graphqlSchema = require("./graphql/schemas");
 const graphqlResolver = require("./graphql/resolvers");
@@ -55,6 +59,19 @@ const fileFilter = (req, file, cb) => {
 };
 
 app.use(express.json());
+
+const accessLogStream = fs.createWriteStream(
+  path.join(__dirname, "access.log"),
+  { flags: "a" }
+);
+
+app.use(
+  helmet({
+    crossOriginResourcePolicy: false,
+  })
+);
+app.use(compression());
+app.use(morgan("combined", { stream: accessLogStream }));
 
 app.use(
   multer({ storage: fileStorage, fileFilter: fileFilter }).single("picture")
@@ -173,7 +190,7 @@ app.get("/images/:name", (req, res, next) => {
   file.pipe(res);
 });
 
-const genAI = new GoogleGenerativeAI("AIzaSyA1FR6TMPcxCJZm6x-Ji6OTKGmoXO0W2Xw");
+const genAI = new GoogleGenerativeAI(process.env.GEMINI_KEY);
 const model = genAI.getGenerativeModel({ model: "gemini-pro" });
 
 app.post("/ai", async (req, res) => {
@@ -229,8 +246,8 @@ Post.hasMany(Comment);
 sequelize
   .sync()
   .then(() => {
-    const server = app.listen(3000, () =>
-      console.log("Server running on port 3000")
+    const server = app.listen(process.env.PORT || 3000, () =>
+      console.log("Server running on port" + process.env.PORT || 3000)
     );
     const socket = require("./socket").init(server);
 
