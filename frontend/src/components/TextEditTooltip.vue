@@ -187,6 +187,7 @@ export default {
   border-radius: 3px;
   opacity: 1;
   transition: opacity 0.5s;
+  z-index: 600;
 }
 
 .hidden {

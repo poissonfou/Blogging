@@ -123,6 +123,7 @@ export default {
       title: "",
       abstract: "",
       body: "",
+      lastSelection: {},
       validationError: { field: "", msg: null },
     };
   },
@@ -137,6 +138,31 @@ export default {
 
       this.tags.push(tag);
     },
+    getSelectionRange(element) {
+      let start = 0,
+        end = 0;
+      let sel, range, priorRange;
+      if (typeof window.getSelection != "undefined") {
+        range = window.getSelection().getRangeAt(0);
+        priorRange = range.cloneRange();
+        priorRange.selectNodeContents(element);
+        priorRange.setEnd(range.startContainer, range.startOffset);
+        start = priorRange.toString().length;
+        end = start + range.toString().length;
+      } else if (
+        typeof document.selection != "undefined" &&
+        (sel = document.selection).type != "Control"
+      ) {
+        range = sel.createRange();
+        priorRange = document.body.createTextRange();
+        priorRange.moveToElementText(element);
+        priorRange.setEndPoint("EndToStart", range);
+        start = priorRange.text.length;
+        end = start + range.text.length;
+      }
+
+      return { start, end };
+    },
   },
   mounted() {
     const textBody = document.getElementById("body");
@@ -146,7 +172,17 @@ export default {
 
     textBody.addEventListener("mousemove", (event) => {
       const selection = String(window.getSelection());
-      if (selection == "") return;
+      if (selection == "") {
+        ![...tooltip.classList].includes("hidden") &&
+          tooltip.classList.add("hidden");
+        return;
+      }
+
+      let { start, end } = this.getSelectionRange(textBody);
+
+      if (this.lastSelection.start == start && this.lastSelection.end == end)
+        return;
+      this.lastSelection = { start, end };
 
       let X = event.pageX;
       let Y = event.pageY;

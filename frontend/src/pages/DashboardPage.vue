@@ -579,6 +579,20 @@ export default {
           msg: data.errors[0].message,
           data: null,
         };
+        if(data.errors[0].status == 401){
+          setTimeout(() => {
+            this.$store.commit("setUser", {
+              id: null,
+              name: "",
+              picture: "",
+              posts: [],
+              followers: [],
+              following: [],
+            });
+            localStorage.setItem("user", null);
+            this.$router.push("/home");
+          }, 3000);
+        }
         return;
       }
 
